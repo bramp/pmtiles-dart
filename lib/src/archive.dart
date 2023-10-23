@@ -47,22 +47,33 @@ class PmTilesArchive {
     return _internalDecoder.fuse(utf8ToJson).convert(metadata);
   }
 
+  Future<Entry?> lookup(int tileId) async {
+    Directory dir = root; // Start at the root
+
+    // Iteratively search for the tile, capped to three deep.
+    for (int depth = 0; depth < 3; depth++) {
+      final entry = dir.find(tileId);
+
+      if (entry == null || !entry.isLeaf) {
+        return entry;
+      }
+
+      assert(entry.isLeaf);
+
+      dir = await _leaf(entry.offset, entry.length);
+    }
+    return null;
+  }
+
   /// Return the tile data for [tileId] as a list of bytes.
   ///
   /// If [uncompress] is true, the data will be uncompressed per the spec. This
   /// can be useful if the tile data is about to be re-served compressed, and
   /// can avoid a uncompress re-compress cycle.
   Future<List<int>> tile(int tileId, {bool uncompress = true}) async {
-    final root = this.root;
-
-    final entry = root.find(tileId);
-    if (entry == null) {
-      // TODO Convert to a nicer exception
+    final entry = await lookup(tileId);
+    if (entry == null || entry.isLeaf) {
       throw TileNotFoundException(tileId);
-    }
-
-    if (entry.isLeaf) {
-      throw Exception("TODO Support leaf");
     }
 
     final tile =
@@ -72,6 +83,21 @@ class PmTilesArchive {
     }
 
     return tileDecoder.convert(tile);
+  }
+
+  /// Read a Leaf Directory from offset (from the beginning of the left section)
+  Future<Directory> _leaf(int offset, int length) async {
+    if (offset > header.leafDirectoriesLength) {
+      throw Exception("Invalid entry points outside of leaf directory");
+    }
+
+    // TODO Consider if we want to cache leafs.
+    // I suspect at any time we are only using 1-2 of them.
+
+    final leaf = await f.readAt(header.leafDirectoriesOffset + offset, length);
+    final uncompressedleaf = _internalDecoder.convert(leaf);
+
+    return Directory.from(uncompressedleaf);
   }
 
   static Future<PmTilesArchive> _from(ReadAt f) async {
@@ -86,7 +112,7 @@ class PmTilesArchive {
 
     if (header.rootDirectoryOffset + header.rootDirectoryLength >
         headerAndRoot.length) {
-      throw Exception('Root directory is out of bounds.');
+      throw Exception('Root directory is out of bounds');
     }
 
     if (header.clustered == Clustered.notClustered) {

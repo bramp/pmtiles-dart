@@ -32,6 +32,8 @@ void main() async {
   final samples = [
     'samples/countries.pmtiles',
     'samples/countries-raster.pmtiles',
+    'samples/countries-leaf.pmtiles',
+    'samples/countries-leafs.pmtiles',
     'samples/trails.pmtiles',
   ];
 

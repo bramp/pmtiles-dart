@@ -6,12 +6,12 @@ import 'package:protobuf/protobuf.dart';
 /// A single entry in the directory. Represents either:
 /// 1) One or more tiles that are identical.
 /// 2) A leaf entry.
-class Entry implements Comparable<Entry> {
-  /// The first tile ID in this run of tiles that are identical to this one..
+class Entry {
+  /// The first tile ID in this run of tiles that are identical to this one.
   int tileId;
 
-  /// The last tile ID (exclusive) in this run of tiles.
-  int lastTileId;
+  /// The length of this run.
+  int runLength;
 
   /// The offset within the Tile Data section.
   int offset;
@@ -21,7 +21,7 @@ class Entry implements Comparable<Entry> {
 
   Entry({
     this.tileId = 0,
-    this.lastTileId = 0,
+    this.runLength = 0,
     this.offset = 0,
     this.length = 0,
   });
@@ -29,9 +29,9 @@ class Entry implements Comparable<Entry> {
   ZXY get zxy => ZXY.fromTileId(tileId);
 
   /// Is a entry that indexes into the leaf directory.
-  bool get isLeaf => tileId == lastTileId;
+  bool get isLeaf => runLength == 0;
 
-  int get runLength => lastTileId - tileId;
+  int get lastTileId => tileId + runLength;
 
   @override
   String toString() {
@@ -48,12 +48,6 @@ class Entry implements Comparable<Entry> {
 
     return '$address tiles $tileId-$lastTileId (run: $runLength)';
   }
-
-  @override
-  int compareTo(Entry b) {
-    // Compare the end of the ranges
-    return (lastTileId).compareTo((b.lastTileId));
-  }
 }
 
 @immutable
@@ -68,7 +62,7 @@ class Directory {
   Directory({
     required this.entries,
     this.totalTiles,
-  }) : assert(totalTiles == null || totalTiles >= entries.length);
+  });
 
   static Directory from(List<int> uncompressed) {
     final reader = CodedBufferReader(uncompressed);
@@ -94,7 +88,7 @@ class Directory {
     int totalTiles = 0;
     for (var i = 0; i < n; i++) {
       final run = reader.readUint32().toInt();
-      entries[i].lastTileId = entries[i].tileId + run;
+      entries[i].runLength = run;
       totalTiles += run;
     }
 
@@ -122,7 +116,7 @@ class Directory {
 
       // TODO Check entries[i].offset is < header.tileDataLength
     }
-    assert(entries.isSorted((a, b) => a.compareTo(b)));
+    assert(entries.isSorted((a, b) => a.tileId.compareTo(b.tileId)));
 
     assert(reader.isAtEnd(), "We should have read everything");
 
@@ -136,13 +130,20 @@ class Directory {
   Entry? find(int tileId) {
     final i = lowerBound(
       entries,
-      Entry(tileId: tileId, lastTileId: tileId + 1),
+      Entry(tileId: tileId),
+      compare: (p0, p1) => p0.tileId <= p1.tileId ? -1 : 1,
     );
 
-    if (i < entries.length) {
-      final entry = entries[i];
+    if (i == 0) {
+      // Result is before the directory
+      return null;
+    }
 
-      if (entry.tileId <= tileId && tileId < entry.lastTileId) {
+    if (i > 0) {
+      final entry = entries[i - 1];
+
+      if (entry.isLeaf ||
+          (entry.tileId <= tileId && tileId < entry.lastTileId)) {
         return entry;
       }
     }
@@ -152,10 +153,8 @@ class Directory {
 
   @override
   String toString() {
-    return '''
-      entries:
-        ${entries.join('\n        ')}
-      totalTiles: $totalTiles,
-    ''';
+    return 'entries:\n'
+        '  ${entries.join('\n  ')}\n'
+        'totalTiles: $totalTiles\n';
   }
 }
