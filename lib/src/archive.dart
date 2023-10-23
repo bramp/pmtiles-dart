@@ -86,7 +86,11 @@ class PmTilesArchive {
 
     if (header.rootDirectoryOffset + header.rootDirectoryLength >
         headerAndRoot.length) {
-      throw Exception('Root directory is out of bounds');
+      throw Exception('Root directory is out of bounds.');
+    }
+
+    if (header.clustered == Clustered.notClustered) {
+      throw Exception('Unclustered archives are not supported.');
     }
 
     final root = Uint8List.view(
