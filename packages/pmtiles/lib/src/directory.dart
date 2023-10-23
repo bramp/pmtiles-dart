@@ -1,6 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
-import 'package:pmtiles/src/zxy.dart';
+import 'zxy.dart';
 import 'package:protobuf/protobuf.dart';
 
 /// A single entry in the directory. Represents either:

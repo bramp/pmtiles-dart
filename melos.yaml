@@ -1,0 +1,21 @@
+name: pmtiles
+
+ide:
+  intellij: false
+
+packages:
+  - packages/*
+
+scripts:
+  test:
+    run: melos run test:dart --no-select
+
+  test:dart:
+    description: Run `dart test` in all dart packages.
+    run: dart test
+    exec:
+      concurrency: 1
+      failFast: true
+    packageFilters:
+      flutter: false
+      dirExists: test

@@ -74,7 +74,7 @@ void main() async {
 
   group('archive', () {
     for (final archive in samples) {
-      test('metadata', () async {
+      test('$archive metadata', () async {
         final expected = json.decoder.convert(
           await http.read(
             Uri.parse(
@@ -92,7 +92,7 @@ void main() async {
         }
       });
 
-      test('tile', () async {
+      test('$archive tiles', () async {
         final file = File(archive);
         final tiles = await PmTilesArchive.fromFile(file);
 
