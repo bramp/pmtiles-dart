@@ -31,7 +31,7 @@ class ZXY {
     for (int z = 0; z < 32; z++) {
       final tilesAtZoom = 1 << (z * 2); // pow(2, x) * pow(2, x)
       if (tileId < tilesAtZoom) {
-        final (x, y) = Hilbert.map(1 << z, tileId);
+        final (x, y) = _Hilbert.map(1 << z, tileId);
         return ZXY(z, x, y);
       }
 
@@ -46,7 +46,7 @@ class ZXY {
     // for (int i = 0; i < z; i++) { tilesOnPreviousLayers += 1 << (i * 2); }
     final tilesOnPreviousLayers =
         ((1 << (z * 2)) - 1) ~/ 3; // (pow(4, z) - 1) ~/ 3;
-    return tilesOnPreviousLayers + Hilbert.inverse(1 << z, x, y);
+    return tilesOnPreviousLayers + _Hilbert.inverse(1 << z, x, y);
   }
 
   @override
@@ -64,7 +64,7 @@ class ZXY {
   String toString() => 'ZXY($z, $x, $y)';
 }
 
-class Hilbert {
+class _Hilbert {
   /// Maps t to (x, y) on a N x N Hilbert curve.
   static (int, int) map(int n, int t) {
     assert(t >= 0 && t < n * n);

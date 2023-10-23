@@ -3,12 +3,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:latlong2/latlong.dart';
-import 'package:pmtiles/pmtiles.dart';
 
-import 'constants.dart';
 import 'convert.dart';
 import 'directory.dart';
+import 'exceptions.dart';
 import 'header.dart';
+import 'types.dart';
 
 class PmTilesArchive {
   // TODO come up with a better interface than a RandomAccessFile.

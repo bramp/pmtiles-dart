@@ -4,9 +4,11 @@ import 'dart:typed_data';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
-import 'constants.dart';
 import 'convert.dart';
 import 'types.dart';
+
+const headerLength = 127;
+const headerAndRootMaxLength = 16384;
 
 /// PMTiles Header
 ///

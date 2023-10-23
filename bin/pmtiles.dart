@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:pmtiles/pmtiles.dart';
-import 'package:pmtiles/src/zxy.dart';
 
 class ZxyCommand extends Command {
   @override
