@@ -119,7 +119,7 @@ class Header {
   @override
   String toString() {
     return '''
-      magic: $magic,
+      magic: ${utf8.decode(magic)},
       version: $version,
       rootDirectoryOffset: $rootDirectoryOffset,
       rootDirectoryLength: $rootDirectoryLength,

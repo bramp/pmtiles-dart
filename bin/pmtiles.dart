@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:pmtiles/pmtiles.dart';
@@ -46,6 +47,7 @@ class ShowCommand extends Command {
   final description = "Show metadata related to a archive.";
 
   ShowCommand() {
+    argParser.addFlag('show-metadata', defaultsTo: true, aliases: ['m']);
     argParser.addFlag('show-root', defaultsTo: false, aliases: ['r']);
   }
 
@@ -66,12 +68,17 @@ class ShowCommand extends Command {
       print("Header:");
       print(tiles.header);
 
-      print("Metadata:");
-      print("      ${await tiles.metadata}");
+      if (argResults!['show-metadata']) {
+        print("Metadata:");
+
+        final encoder = JsonEncoder.withIndent('  ');
+        String prettyJson = encoder.convert(await tiles.metadata);
+        print(prettyJson);
+      }
 
       if (argResults!['show-root']) {
         print("Root:");
-        print("      ${tiles.root}");
+        print("  ${tiles.root}");
       }
     } finally {
       await tiles.close();
