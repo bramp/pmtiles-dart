@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:pmtiles/src/zxy.dart';
 import 'package:protobuf/protobuf.dart';
@@ -5,12 +6,12 @@ import 'package:protobuf/protobuf.dart';
 /// A single entry in the directory. Represents either:
 /// 1) One or more tiles that are identical.
 /// 2) A leaf entry.
-class Entry {
-  /// The tile ID of the first tile in this run.
+class Entry implements Comparable<Entry> {
+  /// The first tile ID in this run of tiles that are identical to this one..
   int tileId;
 
-  /// The number of tiles which are identical to this one.
-  int runLength;
+  /// The last tile ID (exclusive) in this run of tiles.
+  int lastTileId;
 
   /// The offset within the Tile Data section.
   int offset;
@@ -20,7 +21,7 @@ class Entry {
 
   Entry({
     this.tileId = 0,
-    this.runLength = 0,
+    this.lastTileId = 0,
     this.offset = 0,
     this.length = 0,
   });
@@ -28,7 +29,9 @@ class Entry {
   ZXY get zxy => ZXY.fromTileId(tileId);
 
   /// Is a entry that indexes into the leaf directory.
-  bool get isLeaf => runLength == 0;
+  bool get isLeaf => tileId == lastTileId;
+
+  int get runLength => lastTileId - tileId;
 
   @override
   String toString() {
@@ -43,7 +46,13 @@ class Entry {
       return '$address tile: $tileId';
     }
 
-    return '$address tiles $tileId-${tileId + runLength} (run: $runLength)';
+    return '$address tiles $tileId-$lastTileId (run: $runLength)';
+  }
+
+  @override
+  int compareTo(Entry b) {
+    // Compare the end of the ranges
+    return (lastTileId).compareTo((b.lastTileId));
   }
 }
 
@@ -85,7 +94,7 @@ class Directory {
     int totalTiles = 0;
     for (var i = 0; i < n; i++) {
       final run = reader.readUint32().toInt();
-      entries[i].runLength = run;
+      entries[i].lastTileId = entries[i].tileId + run;
       totalTiles += run;
     }
 
@@ -113,6 +122,7 @@ class Directory {
 
       // TODO Check entries[i].offset is < header.tileDataLength
     }
+    assert(entries.isSorted((a, b) => a.compareTo(b)));
 
     assert(reader.isAtEnd(), "We should have read everything");
 
@@ -124,12 +134,19 @@ class Directory {
 
   /// Finds the [Entry] which contains [tileId], or null if not found.
   Entry? find(int tileId) {
-    // TODO Change this to a binary search, and not a linear search.
-    for (final entry in entries) {
-      if (entry.tileId <= tileId && tileId < entry.tileId + entry.runLength) {
+    final i = lowerBound(
+      entries,
+      Entry(tileId: tileId, lastTileId: tileId + 1),
+    );
+
+    if (i < entries.length) {
+      final entry = entries[i];
+
+      if (entry.tileId <= tileId && tileId < entry.lastTileId) {
         return entry;
       }
     }
+
     return null;
   }
 

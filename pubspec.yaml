@@ -10,6 +10,7 @@ dependencies:
   # Maybe overkill to use this package, but anyone consuming this package
   # is most likely already using it.
   args: ^2.4.2
+  collection: ^1.18.0
   http: ^1.1.0
   latlong2: ^0.9.0
 
