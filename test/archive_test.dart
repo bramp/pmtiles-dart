@@ -53,7 +53,15 @@ void main() async {
       includeParentEnvironment: false,
       workingDirectory: sampleDir,
     );
-    process.stdout.drain(); // ignore stdout
+
+    // Wait until it prints 'Serving ... on port'
+    final stdout = process.stdout.transform(utf8.decoder).asBroadcastStream();
+    await stdout.firstWhere((line) => line.contains('Serving'));
+
+    // Then ignore the rest
+    stdout.drain();
+
+    // Always print stderr
     process.stderr.transform(utf8.decoder).forEach(print);
   });
 
