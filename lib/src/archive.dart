@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:latlong2/latlong.dart';
+import 'package:pmtiles/pmtiles.dart';
+
 import 'constants.dart';
 import 'convert.dart';
 import 'directory.dart';
 import 'header.dart';
-import 'types.dart';
 
 class PmTilesArchive {
   // TODO come up with a better interface than a RandomAccessFile.
@@ -21,6 +23,7 @@ class PmTilesArchive {
 
   /// Returns the PMTiles header.
   /// See https://github.com/protomaps/PMTiles/blob/main/spec/v3/spec.md#3-header
+  /// TODO make this not async
   Future<Header> get header async {
     if (_header != null) return _header!;
 
@@ -43,28 +46,16 @@ class PmTilesArchive {
     await f.setPosition(header.rootDirectoryOffset);
     final root = await f.read(header.rootDirectoryLength);
 
-    final uncompressedRoot = internalDecoder.convert(root);
+    final uncompressedRoot = _internalDecoder.convert(root);
 
     return Directory.from(uncompressedRoot);
   }
 
-  static Converter<List<int>, List<int>> _decoder(Compression compression) {
-    return switch (compression) {
-      Compression.none => nullConverter,
-      Compression.gzip => zlib.decoder,
-      // TODO Add support for the following:
-      // Compression.brotli,
-      // Compression.zstd,
-      _ => throw Exception('$compression is not supported'),
-    };
-  }
-
   /// Return an appropriate decoder for the internal compression.
-  Converter<List<int>, List<int>> get internalDecoder {
+  Converter<List<int>, List<int>> get _internalDecoder {
     assert(_header != null, 'Must call header before metadata');
-    final header = _header!;
 
-    return _decoder(header.internalCompression);
+    return _header!.internalCompression.decoder();
   }
 
   /// Return an appropriate decoder for the internal compression.
@@ -72,7 +63,7 @@ class PmTilesArchive {
     assert(_header != null, 'Must call header before metadata');
     final header = _header!;
 
-    return _decoder(header.tileCompression);
+    return header.tileCompression.decoder();
   }
 
   /// Returns a JSON Object containing the embedded metadata.
@@ -85,7 +76,37 @@ class PmTilesArchive {
     final metadata = await f.read(header.metadataLength);
     final utf8ToJson = utf8.decoder.fuse(json.decoder);
 
-    return internalDecoder.fuse(utf8ToJson).convert(metadata);
+    return _internalDecoder.fuse(utf8ToJson).convert(metadata);
+  }
+
+  /// Return the tile data for [tileId] as a list of bytes.
+  ///
+  /// If [uncompress] is true, the data will be uncompressed per the spec. This
+  /// can be useful if the tile data is about to be re-served compressed, and
+  /// can avoid a uncompress re-compress cycle.
+  Future<List<int>> tile(int tileId, {bool uncompress = true}) async {
+    assert(_header != null, 'Must call header before lookup');
+    final header = _header!;
+
+    final root = await this.root;
+
+    final entry = root.find(tileId);
+    if (entry == null) {
+      // TODO Convert to a nicer exception
+      throw TileNotFoundException(tileId);
+    }
+
+    if (entry.isLeaf) {
+      throw Exception("TODO Support leaf");
+    }
+
+    await f.setPosition(header.tileDataOffset + entry.offset);
+    final tile = await f.read(entry.length);
+    if (!uncompress) {
+      return tile;
+    }
+
+    return tileDecoder.convert(tile);
   }
 
   static Future<PmTilesArchive> from(RandomAccessFile f) async {
@@ -96,4 +117,48 @@ class PmTilesArchive {
 
     return archive;
   }
+
+  /// The version of the PMTiles spec this archive uses.
+  int get version => _header!.version;
+
+  /// Compression of all tiles in the archive.
+  Compression get tileCompression => _header!.tileCompression;
+
+  /// Type of tiles in the archive.
+  TileType get tileType => _header!.tileType;
+
+  /// The minimum zoom of the tiles in the archive.
+  int get minZoom => _header!.minZoom;
+
+  /// The maximum zoom of the tiles in the archive.
+  int get maxZoom => _header!.maxZoom;
+
+  /// The minimum latitude and longitude of the bounds of the tiles in
+  /// the archive.
+  LatLng get minPosition => _header!.minPosition;
+
+  /// The maximum latitude and longitude of the bounds of the tiles in
+  /// the archive.
+  LatLng get maxPosition => _header!.maxPosition;
+
+  /// The center zoom.
+  /// A reader MAY use this as the initial zoom when displaying tiles from the
+  /// PMTiles archive.
+  int get centerZoom => _header!.centerZoom;
+
+  /// The latitude and longitude of the center position.
+  /// A reader MAY use this as the initial center position when displaying tiles
+  /// from the PMTiles archive.
+  LatLng get centerPosition => _header!.centerPosition;
+}
+
+extension on Compression {
+  Converter<List<int>, List<int>> decoder() => switch (this) {
+        Compression.none => nullConverter,
+        Compression.gzip => zlib.decoder,
+        // TODO Add support for the following:
+        // Compression.brotli,
+        // Compression.zstd,
+        _ => throw Exception('$this compression is not supported'),
+      };
 }

@@ -1,23 +1,132 @@
 import 'dart:io';
+import 'package:args/command_runner.dart';
 import 'package:pmtiles/pmtiles.dart';
+import 'package:pmtiles/src/zxy.dart';
 
-main() async {
-  //final file = File('samples/trails.pmtiles');
-  final file = File('samples/countries-raster.pmtiles');
-  //final file = File('samples/countries.pmtiles');
-  final f = await file.open(mode: FileMode.read);
+class ZxyCommand extends Command {
+  @override
+  final name = "zxy";
 
-  try {
-    final tiles = await PmTilesArchive.from(f);
-    print("Header:");
-    print(await tiles.header);
+  @override
+  final description = "Converts between tile ID and Z X Y.";
 
-    print("Metadata:");
-    print("      ${await tiles.metadata}");
-
-    print("Root:");
-    print("      ${await tiles.root}");
-  } finally {
-    await f.close();
+  @override
+  String get invocation {
+    return "pmtiles zxy <tileId>\n"
+        "   or: pmtiles zxy <z> <x> <y>";
   }
+
+  @override
+  void run() async {
+    if (argResults!.rest.length == 1) {
+      final tileId = int.parse(argResults!.rest[0]);
+
+      print(ZXY.fromTileId(tileId));
+
+      return;
+    }
+
+    if (argResults!.rest.length == 3) {
+      final z = int.parse(argResults!.rest[0]);
+      final x = int.parse(argResults!.rest[1]);
+      final y = int.parse(argResults!.rest[2]);
+
+      print(ZXY(z, x, y).toTileId());
+
+      return;
+    }
+
+    throw UsageException("", usage);
+  }
+}
+
+class ShowCommand extends Command {
+  @override
+  final name = "show";
+  @override
+  final description = "Show metadata related to a archive.";
+
+  ShowCommand() {
+    argParser.addFlag('show-root', defaultsTo: false, aliases: ['r']);
+  }
+
+  @override
+  String get invocation {
+    return "pmtiles show <archive>";
+  }
+
+  @override
+  void run() async {
+    if (argResults!.rest.length != 1) {
+      throw UsageException("Must provide a single archive file.", usage);
+    }
+
+    final file = File(argResults!.rest[0]);
+    final f = await file.open(mode: FileMode.read);
+
+    try {
+      final tiles = await PmTilesArchive.from(f);
+
+      print("Header:");
+      print(await tiles.header);
+
+      print("Metadata:");
+      print("      ${await tiles.metadata}");
+
+      if (argResults!['show-root']) {
+        print("Root:");
+        print("      ${await tiles.root}");
+      }
+    } finally {
+      await f.close();
+    }
+  }
+}
+
+class TileCommand extends Command {
+  @override
+  final name = "tile";
+  @override
+  final description =
+      "Fetch one tile from a local or remote archive and output on stdout.";
+
+  TileCommand() {
+    argParser.addFlag('uncompress', defaultsTo: true);
+  }
+
+  @override
+  String get invocation {
+    return "pmtiles tile [<options>] <archive> <tileId>";
+  }
+
+  @override
+  void run() async {
+    if (argResults!.rest.length != 2) {
+      throw UsageException("", usage);
+    }
+
+    final file = File(argResults!.rest[0]);
+    final tileId = int.parse(argResults!.rest[1]);
+
+    final f = await file.open(mode: FileMode.read);
+    try {
+      final tiles = await PmTilesArchive.from(f);
+
+      IOSink(stdout).add(await tiles.tile(tileId));
+    } finally {
+      await f.close();
+    }
+  }
+}
+
+main(List<String> args) async {
+  CommandRunner("pmtiles", "A pmtiles command line tool (written in dart).")
+    ..addCommand(ShowCommand())
+    ..addCommand(TileCommand())
+    ..addCommand(ZxyCommand())
+    ..run(args).catchError((error) {
+      if (error is! UsageException) throw error;
+      print(error);
+      exit(-1);
+    });
 }
