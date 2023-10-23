@@ -67,14 +67,14 @@ class ShowCommand extends Command {
       final tiles = await PmTilesArchive.from(f);
 
       print("Header:");
-      print(await tiles.header);
+      print(tiles.header);
 
       print("Metadata:");
       print("      ${await tiles.metadata}");
 
       if (argResults!['show-root']) {
         print("Root:");
-        print("      ${await tiles.root}");
+        print("      ${tiles.root}");
       }
     } finally {
       await f.close();

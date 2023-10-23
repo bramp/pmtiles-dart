@@ -69,7 +69,7 @@ class Header {
   LatLng get centerPosition => data.getLatLng(0x77);
 
   /// Checks the header is valid, and throws an exception if not.
-  void validate() {
+  void validate({bool strict = false}) {
     final magic = utf8.decode(this.magic, allowMalformed: true);
     if (magic != "PMTiles") {
       throw Exception('Invalid magic in header file, found "$magic"');
@@ -77,6 +77,10 @@ class Header {
 
     if (version != 3) {
       throw Exception('Unsupported version "$version"');
+    }
+
+    if (!strict) {
+      return;
     }
 
     // If any "int64" are greater than 2^53, we may have problems when

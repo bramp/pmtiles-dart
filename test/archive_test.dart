@@ -90,13 +90,11 @@ void main() async {
 
         try {
           final tiles = await PmTilesArchive.from(f);
-          final ext = (await tiles.header).tileType.ext();
+          final ext = tiles.header.tileType.ext();
 
           // TODO Maybe set this to min/max location
           for (var id = 0; id < 5400; id++) {
             final t = ZXY.fromTileId(id);
-
-            // TODO make the .mvt configurable
 
             final response = await http.get(
               Uri.parse(
