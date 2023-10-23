@@ -81,23 +81,20 @@ void main() async {
         );
 
         final file = File(archive);
-        final f = await file.open(mode: FileMode.read);
-
+        final tiles = await PmTilesArchive.fromFile(file);
         try {
-          final tiles = await PmTilesArchive.from(f);
           final actual = await tiles.metadata;
           expect(actual, equals(expected));
         } finally {
-          await f.close();
+          await tiles.close();
         }
       });
 
       test('tile', () async {
         final file = File(archive);
-        final f = await file.open(mode: FileMode.read);
+        final tiles = await PmTilesArchive.fromFile(file);
 
         try {
-          final tiles = await PmTilesArchive.from(f);
           final ext = tiles.header.tileType.ext();
 
           // TODO Maybe set this to min/max location
@@ -128,7 +125,7 @@ void main() async {
             }
           }
         } finally {
-          await f.close();
+          await tiles.close();
         }
       });
     }

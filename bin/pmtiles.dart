@@ -57,15 +57,12 @@ class ShowCommand extends Command {
   @override
   void run() async {
     if (argResults!.rest.length != 1) {
-      throw UsageException("Must provide a single archive file.", usage);
+      throw UsageException("Must provide a single archive", usage);
     }
 
-    final file = File(argResults!.rest[0]);
-    final f = await file.open(mode: FileMode.read);
-
+    final file = argResults!.rest[0];
+    final tiles = await PmTilesArchive.from(file);
     try {
-      final tiles = await PmTilesArchive.from(f);
-
       print("Header:");
       print(tiles.header);
 
@@ -77,7 +74,7 @@ class ShowCommand extends Command {
         print("      ${tiles.root}");
       }
     } finally {
-      await f.close();
+      await tiles.close();
     }
   }
 }
@@ -104,16 +101,15 @@ class TileCommand extends Command {
       throw UsageException("", usage);
     }
 
-    final file = File(argResults!.rest[0]);
+    final file = argResults!.rest[0];
     final tileId = int.parse(argResults!.rest[1]);
 
-    final f = await file.open(mode: FileMode.read);
+    final tiles = await PmTilesArchive.from(file);
     try {
-      final tiles = await PmTilesArchive.from(f);
-
+      // Write the binary tile to stdout.
       IOSink(stdout).add(await tiles.tile(tileId));
     } finally {
-      await f.close();
+      await tiles.close();
     }
   }
 }

@@ -2,21 +2,23 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import 'convert.dart';
 import 'directory.dart';
 import 'exceptions.dart';
 import 'header.dart';
+import 'io.dart';
 import 'types.dart';
 
 class PmTilesArchive {
-  // TODO come up with a better interface than a RandomAccessFile.
-  final RandomAccessFile f;
+  final ReadAt f;
 
-  /// The Archive's header.
+  /// The archive's header.
   Header header;
 
+  /// The archive's root directory.
   Directory root;
 
   PmTilesArchive._(
@@ -38,8 +40,8 @@ class PmTilesArchive {
   /// Returns a JSON Object containing the embedded metadata.
   /// See https://github.com/protomaps/PMTiles/blob/main/spec/v3/spec.md#5-json-metadata
   Future<Object?> get metadata async {
-    await f.setPosition(header.metadataOffset);
-    final metadata = await f.read(header.metadataLength);
+    final metadata =
+        await f.readAt(header.metadataOffset, header.metadataLength);
     final utf8ToJson = utf8.decoder.fuse(json.decoder);
 
     return _internalDecoder.fuse(utf8ToJson).convert(metadata);
@@ -63,8 +65,8 @@ class PmTilesArchive {
       throw Exception("TODO Support leaf");
     }
 
-    await f.setPosition(header.tileDataOffset + entry.offset);
-    final tile = await f.read(entry.length);
+    final tile =
+        await f.readAt(header.tileDataOffset + entry.offset, entry.length);
     if (!uncompress) {
       return tile;
     }
@@ -72,9 +74,8 @@ class PmTilesArchive {
     return tileDecoder.convert(tile);
   }
 
-  static Future<PmTilesArchive> from(RandomAccessFile f) async {
-    await f.setPosition(0);
-    final headerAndRoot = await f.read(headerAndRootMaxLength);
+  static Future<PmTilesArchive> _from(ReadAt f) async {
+    final headerAndRoot = await f.readAt(0, headerAndRootMaxLength);
     final header = Header(
       ByteData.view(
         // Make a copy of the first headerLength (127) bytes.
@@ -101,6 +102,34 @@ class PmTilesArchive {
       header: header,
       root: Directory.from(uncompressedRoot),
     );
+  }
+
+  /// Opens the PmTiles archive from the given path or URL.
+  static Future<PmTilesArchive> from(String pathOrUrl) async {
+    if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
+      return fromUri(Uri.parse(pathOrUrl));
+    }
+    return fromFile(File(pathOrUrl));
+  }
+
+  /// Opens a PmTiles archive from the given URL.
+  static Future<PmTilesArchive> fromUri(
+    Uri url, {
+    http.Client? client,
+    Map<String, String>? headers,
+  }) async {
+    return _from(HttpAt(client ?? http.Client(), url, headers: headers));
+  }
+
+  /// Opens a PmTiles archive from the given file.
+  /// Must call [close] when done.
+  static Future<PmTilesArchive> fromFile(File f) async {
+    final r = await f.open(mode: FileMode.read);
+    return _from(RandomAccessFileAt(r));
+  }
+
+  Future<void> close() async {
+    return f.close();
   }
 
   /// The version of the PMTiles spec this archive uses.
