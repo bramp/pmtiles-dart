@@ -55,15 +55,7 @@ class Entry {
 class Directory {
   final List<Entry> entries;
 
-  /// The number of tiles in the directory. If null, the number of tiles is unknown.
-  /// Should match the [numberOfTileEntries] value in the [Header].
-  /// TODO Validate the above statement.
-  final int? totalTiles;
-
-  Directory({
-    required this.entries,
-    this.totalTiles,
-  });
+  Directory({required this.entries});
 
   static Directory from(List<int> uncompressed) {
     final reader = CodedBufferReader(uncompressed);
@@ -86,11 +78,9 @@ class Directory {
       entries.add(Entry(tileId: lastId));
     }
 
-    int totalTiles = 0;
     for (var i = 0; i < n; i++) {
       final run = reader.readUint32().toInt();
       entries[i].runLength = run;
-      totalTiles += run;
     }
 
     for (var i = 0; i < n; i++) {
@@ -122,10 +112,7 @@ class Directory {
 
     assert(reader.isAtEnd(), "We should have read everything");
 
-    return Directory(
-      entries: entries,
-      totalTiles: totalTiles,
-    );
+    return Directory(entries: entries);
   }
 
   /// Finds the [Entry] which contains [tileId], or null if not found.
@@ -156,7 +143,6 @@ class Directory {
   @override
   String toString() {
     return 'entries:\n'
-        '  ${entries.join('\n  ')}\n'
-        'totalTiles: $totalTiles\n';
+        '  ${entries.join('\n  ')}';
   }
 }
