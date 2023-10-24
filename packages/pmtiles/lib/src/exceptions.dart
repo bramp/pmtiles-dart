@@ -8,3 +8,14 @@ class TileNotFoundException implements Exception {
     return 'TileNotFoundException: $tileId';
   }
 }
+
+class CorruptArchiveException implements Exception {
+  final String message;
+
+  CorruptArchiveException(this.message);
+
+  @override
+  String toString() {
+    return 'CorruptArchive: $message';
+  }
+}

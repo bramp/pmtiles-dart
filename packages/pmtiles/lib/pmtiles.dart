@@ -1,6 +1,5 @@
-/// Support for doing something awesome.
+/// Library for reading PMTile files.
 ///
-/// More dartdocs go here.
 library;
 
 export 'src/archive.dart';
@@ -9,5 +8,3 @@ export 'src/types.dart';
 export 'src/zxy.dart';
 
 const mimeType = "application/vnd.pmtiles";
-
-// TODO: Export any libraries intended for clients of this package.

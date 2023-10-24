@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
+import 'exceptions.dart';
 import 'zxy.dart';
 import 'package:protobuf/protobuf.dart';
 
@@ -104,7 +105,8 @@ class Directory {
         /// previous one.
 
         if (i == 0) {
-          throw Exception("Invalid offset of zero in first entry of directory");
+          throw CorruptArchiveException(
+              "Invalid offset of zero in first entry of directory");
         }
 
         final prevEntry = entries[i - 1];

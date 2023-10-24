@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:latlong2/latlong.dart';
-
-import 'types.dart';
+import 'package:pmtiles/pmtiles.dart';
 
 /// Converting between types.
 ///
@@ -28,7 +27,7 @@ extension PmpTilesByteData on ByteData {
     return switch (b) {
       0 => Clustered.notClustered,
       1 => Clustered.clustered,
-      _ => throw FormatException('Invalid clustered value "$b"'),
+      _ => throw CorruptArchiveException('Invalid clustered value "$b"'),
     };
   }
 
@@ -40,7 +39,7 @@ extension PmpTilesByteData on ByteData {
       2 => Compression.gzip,
       3 => Compression.brotli,
       4 => Compression.zstd,
-      _ => throw FormatException('Invalid compression value "$b"'),
+      _ => throw CorruptArchiveException('Invalid compression value "$b"'),
     };
   }
 
@@ -53,7 +52,7 @@ extension PmpTilesByteData on ByteData {
       3 => TileType.jpeg,
       4 => TileType.webp,
       5 => TileType.avif,
-      _ => throw FormatException('Invalid tile type value "$b"'),
+      _ => throw CorruptArchiveException('Invalid tile type value "$b"'),
     };
   }
 

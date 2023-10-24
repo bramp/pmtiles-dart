@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
 import 'convert.dart';
+import 'exceptions.dart';
 import 'types.dart';
 
 const headerLength = 127;
@@ -69,14 +70,16 @@ class Header {
   LatLng get centerPosition => data.getLatLng(0x77);
 
   /// Checks the header is valid, and throws an exception if not.
+  /// If [strict] is true, then additional checks are made.
   void validate({bool strict = false}) {
     final magic = utf8.decode(this.magic, allowMalformed: true);
     if (magic != "PMTiles") {
-      throw Exception('Invalid magic in header file, found "$magic"');
+      throw CorruptArchiveException(
+          'Invalid magic in header file, found "$magic"');
     }
 
     if (version != 3) {
-      throw Exception('Unsupported version "$version"');
+      throw UnsupportedError('Unsupported version "$version"');
     }
 
     if (!strict) {
@@ -106,12 +109,12 @@ class Header {
     tileType;
 
     if (minZoom > maxZoom) {
-      throw Exception(
+      throw CorruptArchiveException(
           'Invalid min and max zoom. Max zoom ($maxZoom) must be greater than or equal to the min zoom ($minZoom)');
     }
 
     if (centerZoom < minZoom || centerZoom > maxZoom) {
-      throw Exception(
+      throw CorruptArchiveException(
           'Invalid center zoom. Center zoom ($centerZoom) must be between the min zoom ($minZoom) and max zoom ($maxZoom)');
     }
   }

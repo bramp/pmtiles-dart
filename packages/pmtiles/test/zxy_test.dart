@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:pmtiles/src/zxy.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('ZXY', () {

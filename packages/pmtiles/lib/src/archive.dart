@@ -87,8 +87,9 @@ class PmTilesArchive {
 
   /// Read a Leaf Directory from offset (from the beginning of the left section)
   Future<Directory> _leaf(int offset, int length) async {
-    if (offset > header.leafDirectoriesLength) {
-      throw Exception("Invalid entry points outside of leaf directory");
+    if (offset + length > header.leafDirectoriesLength) {
+      throw CorruptArchiveException(
+          "Directory Entry points outside of leaf directory.");
     }
 
     // TODO Consider if we want to cache leafs.
@@ -112,11 +113,11 @@ class PmTilesArchive {
 
     if (header.rootDirectoryOffset + header.rootDirectoryLength >
         headerAndRoot.length) {
-      throw Exception('Root directory is out of bounds');
+      throw CorruptArchiveException('Root directory is out of bounds.');
     }
 
     if (header.clustered == Clustered.notClustered) {
-      throw Exception('Unclustered archives are not supported.');
+      throw UnimplementedError('Unclustered archives are not supported.');
     }
 
     final root = Uint8List.view(
@@ -203,6 +204,6 @@ extension on Compression {
         // TODO Add support for the following:
         // Compression.brotli,
         // Compression.zstd,
-        _ => throw Exception('$this compression is not supported'),
+        _ => throw UnimplementedError('$this compression is not supported.'),
       };
 }

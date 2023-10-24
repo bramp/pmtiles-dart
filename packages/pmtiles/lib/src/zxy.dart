@@ -38,7 +38,7 @@ class ZXY {
       tileId -= tilesAtZoom;
     }
 
-    throw Exception("max zoom depth exceeded");
+    throw FormatException("max zoom depth exceeded while decoding $tileId");
   }
 
   int toTileId() {

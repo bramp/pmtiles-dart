@@ -44,12 +44,12 @@ class HttpAt implements ReadAt {
     });
 
     if (response.statusCode != 206) {
-      throw Exception('Unexpected status code: ${response.statusCode}');
+      throw HttpException('Unexpected status code: ${response.statusCode}');
     }
 
     final responseLength = response.headers[HttpHeaders.contentLengthHeader];
     if (responseLength != null && int.parse(responseLength) != length) {
-      throw Exception(
+      throw HttpException(
           'Unexpected Content-Length: $responseLength expected $length');
     }
 
