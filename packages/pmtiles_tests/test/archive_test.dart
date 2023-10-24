@@ -20,8 +20,6 @@ Future<int> getUnusedPort(InternetAddress? address) {
   });
 }
 
-// TODO Move these tests into a seperate project, as they include deps that the
-// main library doesn't need (e.g. http).
 void main() async {
   // This is very heavy handed, but we'll run a pmtiles server, and compare
   // the results to our library.
@@ -131,5 +129,5 @@ void main() async {
         }
       });
     }
-  }, timeout: Timeout(Duration(minutes: 1))); // TODO Change timeout
+  }, timeout: Timeout(Duration(minutes: 1)));
 }

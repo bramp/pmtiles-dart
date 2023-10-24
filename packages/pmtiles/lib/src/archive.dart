@@ -98,7 +98,7 @@ class PmTilesArchive {
     final leaf = await f.readAt(header.leafDirectoriesOffset + offset, length);
     final uncompressedleaf = _internalDecoder.convert(leaf);
 
-    return Directory.from(uncompressedleaf);
+    return Directory.from(uncompressedleaf, header: header);
   }
 
   static Future<PmTilesArchive> _from(ReadAt f) async {
@@ -131,7 +131,7 @@ class PmTilesArchive {
     return PmTilesArchive._(
       f,
       header: header,
-      root: Directory.from(uncompressedRoot),
+      root: Directory.from(uncompressedRoot, header: header),
     );
   }
 
