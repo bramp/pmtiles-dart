@@ -19,3 +19,7 @@ scripts:
     packageFilters:
       flutter: false
       dirExists: test
+
+  pmtiles:
+    description: Run the pmtiles CLI binary.
+    run: dart run packages/pmtiles_cli/bin/pmtiles.dart
