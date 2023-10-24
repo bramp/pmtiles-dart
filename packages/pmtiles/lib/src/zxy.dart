@@ -8,7 +8,10 @@ class ZXY {
   final int x;
   final int y;
 
-  const ZXY(this.z, this.x, this.y);
+  const ZXY(this.z, this.x, this.y)
+      : assert(z >= 0 && z < 27),
+        assert(x >= 0 && x < (1 << z)),
+        assert(y >= 0 && x < (1 << z));
 
   /// Maps a tileId to the appropriate Zoom, X and Y coordinate.
   factory ZXY.fromTileId(int tileId) {
@@ -27,8 +30,10 @@ class ZXY {
     //   |12|3423|1763|19078479|
     //
 
-    // TODO Validate the max zoom supported by int64
-    for (int z = 0; z < 32; z++) {
+    // Only allow up to 27, so that this library works in places where
+    // doubles are used to represent ints, such as JavaScript.
+    // tildID = 2^53 + 1 = ZXY(27, 67108861, 67108863)
+    for (int z = 0; z < 27; z++) {
       final tilesAtZoom = 1 << (z * 2); // pow(2, x) * pow(2, x)
       if (tileId < tilesAtZoom) {
         final (x, y) = _Hilbert.map(1 << z, tileId);
@@ -93,7 +98,7 @@ class _Hilbert {
 
   /// Inverse maps (x, y) to t on a N x N Hilbert curve.
   static int inverse(int n, int x, int y) {
-    assert(x >= 0 || x < n || y >= 0 || y < n);
+    assert(x >= 0 && x < n && y >= 0 && y < n);
 
     int t = 0;
 
