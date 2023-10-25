@@ -1,12 +1,11 @@
 import 'dart:io';
-import 'dart:typed_data';
 
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 
 /// Simple interface so we can abstract reading from Files, or Http.
 abstract interface class ReadAt {
   /// Read [length] bytes from [offset].
-  Future<Uint8List> readAt(int offset, int length);
+  Future<ByteStream> readAt(int offset, int length);
 
   /// Close any resources.
   Future<void> close();
@@ -18,8 +17,11 @@ class RandomAccessFileAt implements ReadAt {
   RandomAccessFileAt(this.file);
 
   @override
-  Future<Uint8List> readAt(int offset, int length) async {
-    return (await file.setPosition(offset)).read(length);
+  Future<ByteStream> readAt(final int offset, final int length) async {
+    final f = await file.setPosition(offset);
+    final data = await f.read(length);
+
+    return ByteStream.fromBytes(data);
   }
 
   @override
@@ -29,7 +31,7 @@ class RandomAccessFileAt implements ReadAt {
 }
 
 class HttpAt implements ReadAt {
-  final http.Client client;
+  final Client client;
   final Uri url;
   final Map<String, String>? headers;
 
@@ -37,11 +39,14 @@ class HttpAt implements ReadAt {
   HttpAt(this.client, this.url, {this.headers});
 
   @override
-  Future<Uint8List> readAt(int offset, int length) async {
-    final response = await client.get(url, headers: {
-      if (headers != null) ...headers!,
-      HttpHeaders.rangeHeader: 'bytes=$offset-${offset + length - 1}',
-    });
+  Future<ByteStream> readAt(int offset, int length) async {
+    final request = Request("GET", url);
+
+    if (headers != null) request.headers.addAll(headers!);
+    request.headers[HttpHeaders.rangeHeader] =
+        'bytes=$offset-${offset + length - 1}';
+
+    final response = await client.send(request);
 
     if (response.statusCode != 206) {
       throw HttpException('Unexpected status code: ${response.statusCode}');
@@ -55,7 +60,7 @@ class HttpAt implements ReadAt {
 
     // TODO check Content-Range: bytes 0-1023/146515
 
-    return response.bodyBytes;
+    return response.stream;
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -10,6 +11,7 @@ import 'directory.dart';
 import 'exceptions.dart';
 import 'header.dart';
 import 'io.dart';
+import 'tile.dart';
 import 'types.dart';
 
 class PmTilesArchive {
@@ -44,9 +46,10 @@ class PmTilesArchive {
         await f.readAt(header.metadataOffset, header.metadataLength);
     final utf8ToJson = utf8.decoder.fuse(json.decoder);
 
-    return _internalDecoder.fuse(utf8ToJson).convert(metadata);
+    return _internalDecoder.fuse(utf8ToJson).convert(await metadata.toBytes());
   }
 
+  /// Finds the entry for this tile. If the tile is not found return null.
   Future<Entry?> lookup(int tileId) async {
     Directory dir = root; // Start at the root
 
@@ -79,10 +82,10 @@ class PmTilesArchive {
     final tile =
         await f.readAt(header.tileDataOffset + entry.offset, entry.length);
     if (!uncompress) {
-      return tile;
+      return tile.toBytes();
     }
 
-    return tileDecoder.convert(tile);
+    return tileDecoder.convert(await tile.toBytes());
   }
 
   /// Read a Leaf Directory from offset (from the beginning of the left section)
@@ -96,13 +99,14 @@ class PmTilesArchive {
     // I suspect at any time we are only using 1-2 of them.
 
     final leaf = await f.readAt(header.leafDirectoriesOffset + offset, length);
-    final uncompressedleaf = _internalDecoder.convert(leaf);
+    final uncompressedleaf = _internalDecoder.convert(await leaf.toBytes());
 
     return Directory.from(uncompressedleaf, header: header);
   }
 
   static Future<PmTilesArchive> _from(ReadAt f) async {
-    final headerAndRoot = await f.readAt(0, headerAndRootMaxLength);
+    final headerAndRoot =
+        await (await f.readAt(0, headerAndRootMaxLength)).toBytes();
     final header = Header(
       ByteData.view(
         // Make a copy of the first headerLength (127) bytes.
@@ -198,6 +202,7 @@ class PmTilesArchive {
 }
 
 extension on Compression {
+  // TODO I wonder if we can change this to Converter<Uint8List, Uint8List>
   Converter<List<int>, List<int>> decoder() => switch (this) {
         Compression.none => nullConverter,
         Compression.gzip => zlib.decoder,
