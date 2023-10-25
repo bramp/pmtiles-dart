@@ -29,11 +29,15 @@ class ZXY {
     //   |...
     //   |12|3423|1763|19078479|
     //
+    if (tileId < 0) {
+      throw FormatException("Tile ID $tileId must be a positive integer.");
+    }
 
+    const maxAllowedZoom = 26;
     // Only allow up to 27, so that this library works in places where
     // doubles are used to represent ints, such as JavaScript.
     // tildID = 2^53 + 1 = ZXY(27, 67108861, 67108863)
-    for (int z = 0; z < 27; z++) {
+    for (int z = 0; z <= maxAllowedZoom; z++) {
       final tilesAtZoom = 1 << (z * 2); // pow(2, x) * pow(2, x)
       if (tileId < tilesAtZoom) {
         final (x, y) = _Hilbert.map(1 << z, tileId);
@@ -43,7 +47,8 @@ class ZXY {
       tileId -= tilesAtZoom;
     }
 
-    throw FormatException("max zoom depth exceeded while decoding $tileId");
+    throw FormatException(
+        "max zoom depth of $maxAllowedZoom exceeded while decoding $tileId");
   }
 
   int toTileId() {
