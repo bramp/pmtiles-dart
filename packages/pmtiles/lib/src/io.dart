@@ -1,6 +1,8 @@
+import 'dart:collection';
 import 'dart:io';
 
 import 'package:http/http.dart';
+import 'package:pool/pool.dart';
 
 /// Simple interface so we can abstract reading from Files, or Http.
 abstract interface class ReadAt {
@@ -11,22 +13,35 @@ abstract interface class ReadAt {
   Future<void> close();
 }
 
-class RandomAccessFileAt implements ReadAt {
-  final RandomAccessFile file;
+class FileAt implements ReadAt {
+  final File file;
 
-  RandomAccessFileAt(this.file);
+  /// RandomAccessFile only allows a single outstanding read at any time, so
+  /// we open a new RandomAccessFile for each read. To bound the number
+  /// we use a pool to cap us to 8 outstanding reads.
+  final _pool = Pool(8, timeout: Duration(seconds: 30));
+
+  FileAt(this.file);
 
   @override
   Future<ByteStream> readAt(final int offset, final int length) async {
-    final f = await file.setPosition(offset);
-    final data = await f.read(length);
+    return _pool.withResource(() async {
+      // TODO Consider caching the open files.
+      final file = await this.file.open(mode: FileMode.read);
+      try {
+        final f = await file.setPosition(offset);
+        final data = await f.read(length);
 
-    return ByteStream.fromBytes(data);
+        return ByteStream.fromBytes(data);
+      } finally {
+        await file.close();
+      }
+    });
   }
 
   @override
   Future<void> close() {
-    return file.close();
+    return _pool.close();
   }
 }
 
@@ -66,5 +81,70 @@ class HttpAt implements ReadAt {
   @override
   Future<void> close() async {
     return client.close();
+  }
+}
+
+/// An List<int> that is made up of a List of List<int>.
+class CordBuffer {
+  final _buffers = Queue<List<int>>();
+
+  /// Offset into current buffer, if its been partially read.
+  int _offset = 0;
+
+  void addAll(List<int> buffer) {
+    _buffers.add(buffer);
+  }
+
+  bool get isEmpty {
+    return _buffers.isEmpty;
+  }
+
+  int get length {
+    return _buffers.fold(0, (int sum, List<int> buffer) {
+          return sum + buffer.length;
+        }) -
+        _offset;
+  }
+
+  void removeRange(int start, int end) {
+    assert(start == 0, "Sorry only zero is supported");
+    assert(start <= end);
+    assert(end <= length);
+
+    var remaining = end;
+    while (remaining > 0 && _buffers.isNotEmpty) {
+      final buffer = _buffers.first;
+
+      // Remove the whole buffer
+      if (remaining > (buffer.length - _offset)) {
+        _buffers.removeFirst();
+        remaining -= (buffer.length - _offset);
+        _offset = 0;
+        continue;
+      }
+
+      // Remove part of the buffer
+      _offset += remaining;
+      remaining -= remaining;
+    }
+
+    assert(remaining == 0,
+        "Should have removed all the data, but $remaining remain");
+  }
+
+  Iterable<int> getRange(int start, int end) {
+    // TODO This is making a copy. We could write our own loop, and return
+    // a view of the data.
+    return _buffers
+        .expand((buffer) => buffer)
+        .skip(_offset + start)
+        .take(end - start);
+  }
+
+  List<int> toList({bool growable = true}) {
+    return _buffers
+        .expand((buffer) => buffer)
+        .skip(_offset)
+        .toList(growable: growable);
   }
 }

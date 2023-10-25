@@ -114,7 +114,8 @@ class TileCommand extends Command {
     final tiles = await PmTilesArchive.from(file);
     try {
       // Write the binary tile to stdout.
-      IOSink(stdout).add(await tiles.tile(tileId));
+      final tile = await tiles.tile(tileId);
+      IOSink(stdout).add(tile.bytes());
     } finally {
       await tiles.close();
     }

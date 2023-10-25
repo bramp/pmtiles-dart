@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -11,8 +12,10 @@ import 'directory.dart';
 import 'exceptions.dart';
 import 'header.dart';
 import 'io.dart';
+import 'range.dart';
 import 'tile.dart';
 import 'types.dart';
+import 'utils.dart';
 
 class PmTilesArchive {
   final ReadAt f;
@@ -68,24 +71,174 @@ class PmTilesArchive {
     return null;
   }
 
-  /// Return the tile data for [tileId] as a list of bytes.
-  ///
-  /// If [uncompress] is true, the data will be uncompressed per the spec. This
-  /// can be useful if the tile data is about to be re-served compressed, and
-  /// can avoid a uncompress re-compress cycle.
-  Future<List<int>> tile(int tileId, {bool uncompress = true}) async {
+  /// Return the tile data for a single tile [tileId].
+  Future<Tile> tile(int tileId) async {
     final entry = await lookup(tileId);
     if (entry == null || entry.isLeaf) {
-      throw TileNotFoundException(tileId);
+      return Tile(
+        tileId,
+        exception: TileNotFoundException(tileId),
+      );
     }
 
-    final tile =
-        await f.readAt(header.tileDataOffset + entry.offset, entry.length);
-    if (!uncompress) {
-      return tile.toBytes();
-    }
+    final tile = await f.readAt(
+      header.tileDataOffset + entry.offset,
+      entry.length,
+    );
 
-    return tileDecoder.convert(await tile.toBytes());
+    return Tile(
+      tileId,
+      bytes: await tile.toBytes(),
+      compression: tileCompression,
+      type: tileType,
+    );
+  }
+
+  /// Issues a read for the [range], then turns them into [Tile]s that are published to [controller].
+  Future<void> _readRangeToTiles(
+    final StreamController controller,
+    List<MapEntry<Entry, List<int>>> entriesToTileIds,
+  ) {
+    assert(entriesToTileIds.isNotEmpty);
+    assert(() {
+      for (int i = 0; i < entriesToTileIds.length - 1; i++) {
+        final Entry cur = entriesToTileIds[i].key;
+        final Entry next = entriesToTileIds[i + 1].key;
+        assert(cur.offset + cur.length == next.offset,
+            "Expect entries $cur and $next to be contingous");
+      }
+
+      return true;
+    }());
+
+    // Calculate the range to read.
+    int begin = entriesToTileIds.first.key.offset;
+    Entry last = entriesToTileIds.last.key;
+    int end = last.offset + last.length;
+
+    return f.readAt(header.tileDataOffset + begin, end - begin).then(
+      (http.ByteStream stream) async {
+        final buffer = CordBuffer();
+
+        // Current entry being processed
+        final i = entriesToTileIds.iterator;
+        final more = i.moveNext();
+        assert(more, "Expected there to be atleast one entry");
+
+        // Current read offset
+        int offset = begin;
+
+        await for (final bytes in stream) {
+          if (controller.isClosed) {
+            // If one of the other streams broke, this may close the controller.
+            break;
+          }
+
+          buffer.addAll(bytes);
+
+          // If we have atleast enough bytes for the first entry, try and
+          // process it, repeating until we don't have enough bytes anymore.
+          Entry entry = i.current.key;
+          while (buffer.length >= entry.length) {
+            assert(offset == entry.offset,
+                "Expected the entry $entry to start at the current offset ${hexPad(offset)}");
+
+            final bytes = buffer.getRange(0, entry.length).toList();
+            for (final tileId in i.current.value) {
+              // For each tile this entry maps to, publish it.
+              controller.add(Tile(
+                tileId,
+                bytes: bytes,
+                compression: tileCompression,
+                type: tileType,
+              ));
+            }
+
+            buffer.removeRange(0, bytes.length);
+            offset += bytes.length;
+
+            // No more entries, so bail.
+            if (!i.moveNext()) {
+              break;
+            }
+            entry = i.current.key;
+          }
+        }
+
+        assert(buffer.length == 0,
+            "Expected to have read all the bytes but ${buffer.length} remain");
+      },
+    );
+  }
+
+  /// Returns a stream of tiles for the given [tildIds]. The tiles my be return
+  /// out of order. This tries to batch the fetching of tiles together to reduce
+  /// the calls to the underlying archive.
+  Stream<Tile> tiles(List<int> tileIds) {
+    // Seperate the definition and assignment of [controller] so that we can
+    // pass it to the onListen callback.
+    late final StreamController<Tile> controller;
+
+    controller = StreamController(onListen: () async {
+      try {
+        // Find the location of all the tiles first.
+        final entries = await Future.wait(tileIds.map(lookup));
+
+        // Construct a map of the Entries to the Tile IDs.
+        // This is because multiple tiles may share the same Entry.
+        final entriesMap = SplayTreeMap<Entry, List<int>>(
+          (key1, key2) => key1.offset.compareTo(key2.offset),
+        );
+        for (var i = 0; i < tileIds.length; i++) {
+          final tildId = tileIds[i];
+          final entry = entries[i];
+
+          if (entry == null) {
+            controller.add(Tile(
+              tildId,
+              exception: TileNotFoundException(tildId),
+            ));
+            continue;
+          }
+
+          if (entriesMap.containsKey(entry)) {
+            entriesMap[entry]!.add(tildId);
+          } else {
+            entriesMap[entry] = [tildId];
+          }
+        }
+
+        // Merge all entries together, into a few large range reads.
+        final ranges = IntRange.unionAll(
+          entriesMap.keys.map(
+            (entry) => IntRange(entry.offset, entry.offset + entry.length),
+          ),
+        );
+
+        // Now do the larger range reads.
+        final reads = ranges.map((range) {
+          /// Find all the entries that are in this range.
+          /// They are already sorted, and will be processed in order.
+          /// TODO We can most likey be smarter can use the fact they are sorted
+          /// to partition this.
+          final rangeEntries = entriesMap.entries
+              .where((e) => range.contains(e.key.offset))
+              .toList();
+
+          return _readRangeToTiles(controller, rangeEntries);
+        });
+
+        /// Finally await for all the reads to have finished before closing the
+        /// stream.
+        await Future.wait(reads);
+      } catch (e) {
+        controller.addError(e);
+      } finally {
+        controller.close();
+      }
+    });
+
+    return controller.stream;
   }
 
   /// Read a Leaf Directory from offset (from the beginning of the left section)
@@ -159,8 +312,7 @@ class PmTilesArchive {
   /// Opens a PmTiles archive from the given file.
   /// Must call [close] when done.
   static Future<PmTilesArchive> fromFile(File f) async {
-    final r = await f.open(mode: FileMode.read);
-    return _from(RandomAccessFileAt(r));
+    return _from(FileAt(f));
   }
 
   Future<void> close() async {
@@ -201,7 +353,7 @@ class PmTilesArchive {
   LatLng get centerPosition => header.centerPosition;
 }
 
-extension on Compression {
+extension CompressionDecoder on Compression {
   // TODO I wonder if we can change this to Converter<Uint8List, Uint8List>
   Converter<List<int>, List<int>> decoder() => switch (this) {
         Compression.none => nullConverter,

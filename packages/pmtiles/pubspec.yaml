@@ -19,6 +19,9 @@ dependencies:
   # reading varints.
   protobuf: ^3.1.0
 
+  pool: 1.5.1
+
 dev_dependencies:
   lints: ^2.0.0
   test: ^1.21.0
+  trotter: 2.2.0

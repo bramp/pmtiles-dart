@@ -6,11 +6,9 @@ publish_to: none
 environment:
   sdk: ^3.1.4
 
-dependencies:
-  http: ^1.1.0
-  path: ^1.8.3
-  pmtiles: any
-
 dev_dependencies:
   lints: ^2.0.0
   test: ^1.21.0
+  http: ^1.1.0
+  path: ^1.8.3
+  pmtiles: any

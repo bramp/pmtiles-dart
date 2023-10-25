@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'exceptions.dart';
 import 'header.dart';
+import 'utils.dart';
 import 'zxy.dart';
 import 'package:protobuf/protobuf.dart';
 
@@ -37,9 +38,7 @@ class Entry {
 
   @override
   String toString() {
-    pad(x) => x.toRadixString(16).padLeft(8, '0');
-
-    final address = '[${pad(offset)}-${pad(offset + length)})';
+    final address = '[${hexPad(offset)}-${hexPad(offset + length)})';
     if (isLeaf) {
       return '$address leaf: $tileId';
     }
