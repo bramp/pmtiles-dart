@@ -120,14 +120,12 @@ void main() async {
 
               // If we managed to call tiles.tile, then the server should have also
               // returned a 200 OK
-              expect(200, equals(response.statusCode),
-                  reason: '$sample Tile $id');
-              expect(actual, equals(expected), reason: '$sample Tile $id');
+              expect(200, equals(response.statusCode), reason: 'Tile $id');
+              expect(actual, equals(expected), reason: 'Tile $id');
             } on TileNotFoundException {
               // If we throw a TileNotFoundException we should expect the server
               // to return a 404 Not Found, or a 204 No Content.
-              expect(204, equals(response.statusCode),
-                  reason: '$sample Tile $id');
+              expect(204, equals(response.statusCode), reason: 'Tile $id');
             }
           }
         } finally {
@@ -158,30 +156,20 @@ void main() async {
 
               final response = await getReferenceTile(sample, id, ext);
 
-              if (response.statusCode == 200) {
+              try {
                 final actual = Uint8List.fromList(tile.bytes());
                 final expected = response.bodyBytes;
 
-                expect(actual, equals(expected), reason: '$archive Tile $id');
-              } else {}
+                // If we managed to call tiles.tiles, then the server should
+                // have also returned a 200 OK
+                expect(200, equals(response.statusCode), reason: 'Tile $id');
+                expect(actual, equals(expected), reason: 'Tile $id');
+              } on TileNotFoundException {
+                // If we throw a TileNotFoundException we should expect the server
+                // to return a 404 Not Found, or a 204 No Content.
+                expect(204, equals(response.statusCode), reason: 'Tile $id');
+              }
             }
-
-            /*
-            try {
-              final tile = await archive.tile(id);
-
-              // If we managed to call tiles.tile, then the server should have also
-              // returned a 200 OK
-              expect(200, equals(response.statusCode),
-                  reason: '$archive Tile $id $t');
-              expect(actual, equals(expected), reason: '$archive Tile $id $t');
-            } on TileNotFoundException {
-              // If we throw a TileNotFoundException we should expect the server
-              // to return a 404 Not Found, or a 204 No Content.
-              expect(204, equals(response.statusCode),
-                  reason: '$archive Tile $id $t');
-            }
-            */
           }
         } finally {
           await archive.close();
