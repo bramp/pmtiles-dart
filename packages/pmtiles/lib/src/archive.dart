@@ -6,12 +6,14 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:meta/meta.dart';
 
 import 'convert.dart';
 import 'directory.dart';
 import 'exceptions.dart';
 import 'header.dart';
 import 'io.dart';
+import 'loading_cache.dart';
 import 'range.dart';
 import 'tile.dart';
 import 'types.dart';
@@ -26,11 +28,20 @@ class PmTilesArchive {
   /// The archive's root directory.
   Directory root;
 
+  /// Cache of leaf entries
+  /// Currently unbounded.
+  late final LoadingCache<(int, int), Directory> _leafCache;
+
   PmTilesArchive._(
     this.f, {
     required this.header,
     required this.root,
-  });
+  }) {
+    _leafCache = LoadingCache<(int, int), Directory>(
+      (key) => _loadLeaf(key.$1, key.$2),
+      capacity: 8,
+    );
+  }
 
   /// Return an appropriate decoder for the internal compression.
   Converter<List<int>, List<int>> get _internalDecoder {
@@ -242,7 +253,7 @@ class PmTilesArchive {
   }
 
   /// Read a Leaf Directory from offset (from the beginning of the left section)
-  Future<Directory> _leaf(int offset, int length) async {
+  Future<Directory> _loadLeaf(int offset, int length) async {
     if (offset + length > header.leafDirectoriesLength) {
       throw CorruptArchiveException(
           "Directory Entry points outside of leaf directory.");
@@ -257,7 +268,15 @@ class PmTilesArchive {
     return Directory.from(uncompressedleaf, header: header);
   }
 
-  static Future<PmTilesArchive> _from(ReadAt f) async {
+  /// Read a Leaf Directory from offset (from the beginning of the left section) and cache it.
+  Future<Directory> _leaf(int offset, int length) async {
+    return _leafCache.get((offset, length));
+  }
+
+  /// Reads a PmTiles archive from the given ReadAt interface.
+  @visibleForTesting
+  // ignore: invalid_use_of_visible_for_testing_member
+  static Future<PmTilesArchive> fromReadAt(ReadAt f) async {
     final headerAndRoot =
         await (await f.readAt(0, headerAndRootMaxLength)).toBytes();
     final header = Header(
@@ -306,13 +325,13 @@ class PmTilesArchive {
     http.Client? client,
     Map<String, String>? headers,
   }) async {
-    return _from(HttpAt(client ?? http.Client(), url, headers: headers));
+    return fromReadAt(HttpAt(client ?? http.Client(), url, headers: headers));
   }
 
   /// Opens a PmTiles archive from the given file.
   /// Must call [close] when done.
   static Future<PmTilesArchive> fromFile(File f) async {
-    return _from(FileAt(f));
+    return fromReadAt(FileAt(f));
   }
 
   Future<void> close() async {

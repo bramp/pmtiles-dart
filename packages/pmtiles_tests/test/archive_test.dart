@@ -20,6 +20,31 @@ Future<int> getUnusedPort(InternetAddress? address) {
   });
 }
 
+class CountingReadAt implements ReadAt {
+  final ReadAt _inner;
+  int requests = 0;
+  int bytes = 0;
+
+  CountingReadAt(this._inner);
+
+  @override
+  Future<void> close() {
+    return _inner.close();
+  }
+
+  @override
+  Future<http.ByteStream> readAt(int offset, int length) {
+    requests++;
+    bytes += length;
+    return _inner.readAt(offset, length);
+  }
+
+  void reset() {
+    requests = 0;
+    bytes = 0;
+  }
+}
+
 // This is very heavy handed, but we'll run a pmtiles server, and compare
 // the results to our library.
 void main() async {
@@ -135,6 +160,7 @@ void main() async {
 
       test('$sample tiles(..)', () async {
         final file = File(sample);
+
         final archive = await PmTilesArchive.fromFile(file);
         try {
           final ext = archive.header.tileType.ext();
@@ -171,6 +197,37 @@ void main() async {
               }
             }
           }
+        } finally {
+          await archive.close();
+        }
+      });
+
+      test('$sample tiles(..) counting reads', () async {
+        final file = CountingReadAt(FileAt(File(sample)));
+
+        final archive = await PmTilesArchive.fromReadAt(file);
+        try {
+          // One request to read the header + root directory
+          expect(file.requests, equals(1));
+          expect(file.bytes, equals(16384));
+          file.reset();
+
+          const groupSize = 16 * 16;
+          final wanted = List.generate(groupSize, (index) => index);
+
+          // Fetch the first groupSize tiles.
+          final tiles = await archive.tiles(wanted).toList();
+          expect(tiles.length, wanted.length);
+
+          // Check we made the right number of requests.
+          if (archive.header.leafDirectoriesLength > 0) {
+            // Expect 1 tile + 1 or 2 leaf read (in addition to the header read above).
+            expect(file.requests, inInclusiveRange(2, 3));
+          } else {
+            // Expect 1 tile read (in addition to the header read above).
+            expect(file.requests, equals(1));
+          }
+          file.reset();
         } finally {
           await archive.close();
         }
