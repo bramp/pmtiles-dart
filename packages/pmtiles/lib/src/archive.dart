@@ -20,7 +20,7 @@ import 'types.dart';
 import 'utils.dart';
 
 class PmTilesArchive {
-  final ReadAt f;
+  final ReadAt _f;
 
   /// The archive's header.
   Header header;
@@ -33,7 +33,7 @@ class PmTilesArchive {
   late final LoadingCache<(int, int), Directory> _leafCache;
 
   PmTilesArchive._(
-    this.f, {
+    this._f, {
     required this.header,
     required this.root,
   }) {
@@ -57,7 +57,7 @@ class PmTilesArchive {
   /// See https://github.com/protomaps/PMTiles/blob/main/spec/v3/spec.md#5-json-metadata
   Future<Object?> get metadata async {
     final metadata =
-        await f.readAt(header.metadataOffset, header.metadataLength);
+        await _f.readAt(header.metadataOffset, header.metadataLength);
     final utf8ToJson = utf8.decoder.fuse(json.decoder);
 
     return _internalDecoder.fuse(utf8ToJson).convert(await metadata.toBytes());
@@ -92,7 +92,7 @@ class PmTilesArchive {
       );
     }
 
-    final tile = await f.readAt(
+    final tile = await _f.readAt(
       header.tileDataOffset + entry.offset,
       entry.length,
     );
@@ -127,7 +127,7 @@ class PmTilesArchive {
     Entry last = entriesToTileIds.last.key;
     int end = last.offset + last.length;
 
-    return f.readAt(header.tileDataOffset + begin, end - begin).then(
+    return _f.readAt(header.tileDataOffset + begin, end - begin).then(
       (http.ByteStream stream) async {
         final buffer = CordBuffer();
 
@@ -262,7 +262,7 @@ class PmTilesArchive {
     // TODO Consider if we want to cache leafs.
     // I suspect at any time we are only using 1-2 of them.
 
-    final leaf = await f.readAt(header.leafDirectoriesOffset + offset, length);
+    final leaf = await _f.readAt(header.leafDirectoriesOffset + offset, length);
     final uncompressedleaf = _internalDecoder.convert(await leaf.toBytes());
 
     return Directory.from(uncompressedleaf, header: header);
@@ -335,7 +335,7 @@ class PmTilesArchive {
   }
 
   Future<void> close() async {
-    return f.close();
+    return _f.close();
   }
 
   /// The version of the PMTiles spec this archive uses.
