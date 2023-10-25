@@ -94,6 +94,8 @@ void main() async {
         final file = File(archive);
         final tiles = await PmTilesArchive.fromFile(file);
 
+        final client = http.Client();
+
         try {
           final ext = tiles.header.tileType.ext();
 
@@ -101,7 +103,7 @@ void main() async {
           for (var id = 0; id < 5400; id++) {
             final t = ZXY.fromTileId(id);
 
-            final response = await http.get(
+            final response = await client.get(
               Uri.parse(
                   'http://localhost:$port/${p.basenameWithoutExtension(archive)}/${t.z}/${t.x}/${t.y}.$ext'),
             );
