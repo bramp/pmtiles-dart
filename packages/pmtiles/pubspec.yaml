@@ -1,5 +1,7 @@
 name: pmtiles
-description: A library for parsing pmtiles files.
+description:
+  A library for parsing Protomaps PMTiles files. A single file archive format
+  for storing raster or vector map tiles.
 version: 1.0.0
 repository: https://github.com/bramp/pmtiles-dart
 

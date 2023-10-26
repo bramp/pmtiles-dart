@@ -19,6 +19,10 @@ import 'tile.dart';
 import 'types.dart';
 import 'utils.dart';
 
+/// PmTiles archive
+///
+/// A PmTiles archive is a single file that contains all the tiles for a map.
+///
 class PmTilesArchive {
   final ReadAt _f;
 
