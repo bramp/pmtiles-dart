@@ -63,7 +63,11 @@ class Header {
 
   /// Compression of the root directory, metadata, and all leaf directories.
   Compression get internalCompression => data.getCompression(0x61);
+
+  /// Compression of the tile data.
   Compression get tileCompression => data.getCompression(0x62);
+
+  /// Type of tile data.
   TileType get tileType => data.getTileType(0x63);
 
   int get minZoom => data.getUint8(0x64);
