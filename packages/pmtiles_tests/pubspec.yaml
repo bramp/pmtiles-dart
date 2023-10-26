@@ -11,4 +11,4 @@ dev_dependencies:
   test: ^1.21.0
   http: ^1.1.0
   path: ^1.8.3
-  pmtiles: any
+  pmtiles: ^1.1.0
