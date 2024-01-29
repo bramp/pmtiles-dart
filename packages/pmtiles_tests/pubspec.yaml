@@ -5,10 +5,20 @@ publish_to: none
 
 environment:
   sdk: ^3.1.4
+  flutter: ">=1.17.0"
+
+# We don't actually need flutter, but this is a useful way to ensure
+# we don't conflict with any pinned dependencies.
+# https://github.com/dart-lang/sdk/wiki/Flutter-Pinned-Packages
+dependencies:
+  flutter:
+    sdk: flutter
 
 dev_dependencies:
-  lints: ^2.0.0
-  test: ^1.21.0
-  http: ^1.1.0
+  flutter_test:
+    sdk: flutter
+  test: any
+  lints: ^3.0.0
+  http: ^1.2.0
   path: ^1.8.3
   pmtiles: ^1.1.0

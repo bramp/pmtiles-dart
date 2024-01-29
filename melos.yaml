@@ -8,7 +8,9 @@ packages:
 
 scripts:
   test:
-    run: melos run test:dart --no-select
+    run: |
+      melos run test:dart --no-select && \
+      melos run test:flutter --no-select
 
   test:dart:
     description: Run `dart test` in all dart packages.
@@ -18,6 +20,16 @@ scripts:
       failFast: true
     packageFilters:
       flutter: false
+      dirExists: test
+
+  test:flutter:
+    description: Run `flutter test` in all flutter packages.
+    run: flutter test
+    exec:
+      concurrency: 1
+      failFast: true
+    packageFilters:
+      flutter: true
       dirExists: test
 
   pmtiles:
