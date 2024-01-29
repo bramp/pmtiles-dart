@@ -1,0 +1,55 @@
+# To test this workflow, you can use the following command:
+# act -j build -s GITHUB_TOKEN="$(gh auth token)" --container-architecture linux/amd64
+name: Dart
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # - uses: dart-lang/setup-dart@v1
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - run: flutter doctor -v
+
+      - name: Install dart dependencies
+        run: dart pub get
+
+      - name: Install melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap melos
+        run: melos bootstrap
+
+      # Uncomment this step to verify the use of 'dart format' on each commit.
+      # - name: Verify formatting
+      #   run: dart format --output=none --set-exit-if-changed .
+
+      # Consider passing '--fatal-infos' for slightly stricter analysis.
+      - name: Analyze project source
+        run: dart analyze
+
+      # Needed for the integration tests
+      - name: Install pmtiles
+        # Running from HEAD as it has a fix we need
+        # https://github.com/jaxxstorm/action-install-gh-release/commit/410ab39896b55ae0084c2b3921e25665356169b6
+        # switch to a tagged version when it's released
+        uses: jaxxstorm/action-install-gh-release@HEAD
+        with:
+          repo: protomaps/go-pmtiles
+          tag: v1.14.0 # Pinned version (to make the tests less flakey)
+
+      - run: pmtiles version
+
+      - name: Run tests
+        run: melos test

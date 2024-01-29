@@ -66,6 +66,7 @@ void main() async {
     // We could consider allowing this to be set on the env.
     final pmtiles =
         Process.runSync('which', ['pmtiles']).stdout.toString().trim();
+    expect(pmtiles, isNotEmpty, reason: 'Could not find pmtiles binary');
 
     // Invoke `pmtiles serve`.
     process = await Process.start(
