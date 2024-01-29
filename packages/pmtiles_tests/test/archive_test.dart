@@ -49,7 +49,7 @@ class CountingReadAt implements ReadAt {
 // the results to our library.
 void main() async {
   final port = await getUnusedPort(InternetAddress.loopbackIPv4);
-  late final Process process;
+  Process? process;
   final client = http.Client();
 
   final sampleDir = p.join(Directory.current.path, 'samples');
@@ -66,6 +66,7 @@ void main() async {
     // We could consider allowing this to be set on the env.
     final pmtiles =
         Process.runSync('which', ['pmtiles']).stdout.toString().trim();
+
     expect(pmtiles, isNotEmpty, reason: 'Could not find pmtiles binary');
 
     // Invoke `pmtiles serve`.
@@ -82,19 +83,22 @@ void main() async {
     );
 
     // Wait until it prints 'Serving ... on port'
-    final stdout = process.stdout.transform(utf8.decoder).asBroadcastStream();
+    final stdout = process!.stdout.transform(utf8.decoder).asBroadcastStream();
     await stdout.firstWhere((line) => line.contains('Serving'));
 
     // Then ignore the rest
     stdout.drain();
 
     // Always print stderr
-    process.stderr.transform(utf8.decoder).forEach(print);
+    process!.stderr.transform(utf8.decoder).forEach(print);
   });
 
   tearDownAll(() async {
-    process.kill();
-    await process.exitCode;
+    expect(process, isNotNull,
+        reason: '`pmtiles serve` process was not started');
+
+    process!.kill();
+    await process!.exitCode;
   });
 
   /// Use the pmtiles server to get the tile, as a source of comparision
