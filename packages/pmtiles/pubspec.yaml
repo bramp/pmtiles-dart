@@ -11,7 +11,7 @@ environment:
 dependencies:
   collection: ^1.18.0
   http: ^1.1.0
-  meta: ^1.11.0
+  meta: ^1.10.0
   path: ^1.8.3
 
   # latlong2 is maybe overkill, but anyone consuming this package is most likely already using it.
