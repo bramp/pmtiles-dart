@@ -23,3 +23,12 @@ scripts:
   pmtiles:
     description: Run the pmtiles CLI binary.
     run: dart run packages/pmtiles_cli/bin/pmtiles.dart
+
+  upgrade:
+    run: |
+      melos exec -- \
+        "dart pub outdated && dart pub upgrade --major-versions --tighten"
+      melos clean
+      melos bootstrap
+    description: |
+      Upgrade all packages to the latest version.
