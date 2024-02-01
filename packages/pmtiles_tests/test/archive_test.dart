@@ -4,13 +4,15 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:pmtiles/pmtiles.dart';
-import 'package:stream_channel/stream_channel.dart';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
+import 'server_args.dart';
+
 final client = http.Client();
-late final int port;
+late final String pmtilesUrl;
+final sampleDir = path.join(Directory.current.path, 'samples');
 
 /// Use the pmtiles server to get the tile, as a source of comparision
 Future<http.Response> getReferenceTile(
@@ -19,11 +21,21 @@ Future<http.Response> getReferenceTile(
 
   final basename = path.basenameWithoutExtension(archive);
   final response = await client.get(
-    Uri.parse('http://localhost:$port/$basename/${t.z}/${t.x}/${t.y}.$ext'),
+    Uri.parse('$pmtilesUrl/$basename/${t.z}/${t.x}/${t.y}.$ext'),
   );
   return response;
 }
 
+dynamic getReferenceMetadata(String sample) async {
+  final basename = path.basenameWithoutExtension(sample);
+  return json.decoder.convert(
+    await http.read(
+      Uri.parse('$pmtilesUrl/$basename/metadata'),
+    ),
+  );
+}
+
+/// Wrapper for a ReadAt, that counts how many requests/bytes are read.
 class CountingReadAt implements ReadAt {
   final ReadAt _inner;
   int requests = 0;
@@ -49,8 +61,55 @@ class CountingReadAt implements ReadAt {
   }
 }
 
-// This is very heavy handed, but we'll run a pmtiles server, and compare
-// the results to our library.
+String pmtilesServingToUrl(String logline) {
+  return logline.replaceAllMapped(
+      RegExp(r'(.* Serving .* port )(\d+)( .* interface )([\d.]+)(.*)'),
+      (Match m) => "http://${m[4]}:${m[2]}");
+  // ${m[4]} may be 0.0.0.0, which seems to allow us to connect to (on my
+  // mac), but I'm not sure that's valid everywhere. Maybe we replaced
+  // that with localhost.
+}
+
+/// Start a `pmtile server` instance, returning the URL its running on.
+Future<String> startPmtilesServer() async {
+  final channel = spawnHybridUri(
+    'server.dart',
+    stayAlive: true,
+    message: ServerArgs(
+      executable: 'pmtiles',
+      arguments: [
+        'serve',
+        '.',
+
+        '--port', '\$port',
+
+        // Allow requests from any origin. This allows the `chrome` browser
+        // based tests to work.
+        '--cors',
+        '*'
+      ],
+      workingDirectory: 'samples',
+      waitFor: 'Serving',
+    ).toJson(),
+  );
+
+  addTearDown(() async {
+    // Tell the pmtiles server to shutdown and wait for the sink to be closed.
+    channel.sink.add("tearDownAll");
+    await channel.sink.done;
+  });
+
+  // Get the url pmtiles server is running on.
+  return pmtilesServingToUrl(await channel.stream.first);
+}
+
+// This is very heavy handed, but we'll run a `pmtiles server`, and makes 1000s
+// of API calls comparing the reference results to the results to our library.
+//
+// There is a lot of additional complexity here, so these tests can be
+// performaned from a web browser. As such, the serving of the test data is done
+// from a `spawnHybridUri` isolate, and the actual test in this file is run
+// in the browser.
 void main() async {
   final samples = [
     'samples/countries.pmtiles',
@@ -60,34 +119,15 @@ void main() async {
     'samples/trails.pmtiles',
   ];
 
-  StreamChannel? channel;
-
   setUpAll(() async {
-    // pmtiles_server.dart will spawn a `pmtiles serve` process, for testing.
-    channel = spawnHybridUri('pmtiles_server.dart', stayAlive: true);
-
-    // Get the port the pmtiles server is running on.
-    port = await channel!.stream.first;
-  });
-
-  tearDownAll(() async {
-    // Tell the pmtiles server to shutdown and wait for the sink to be closed.
-    if (channel != null) {
-      channel!.sink.add("tearDownAll");
-      await channel!.sink.done;
-    }
+    pmtilesUrl = await startPmtilesServer();
   });
 
   group('archive', () {
     for (final sample in samples) {
       test('$sample metadata()', () async {
         // Fetch the reference metadata from the pmtiles server.
-        final basename = path.basenameWithoutExtension(sample);
-        final expected = json.decoder.convert(
-          await http.read(
-            Uri.parse('http://localhost:$port/$basename/metadata'),
-          ),
-        );
+        final expected = await getReferenceMetadata(sample);
 
         // Now test our implementation
         final file = File(sample);
