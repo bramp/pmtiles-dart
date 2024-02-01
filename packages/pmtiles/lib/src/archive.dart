@@ -349,6 +349,10 @@ class PmTilesArchive {
     return fromReadAt(FileAt(f));
   }
 
+  static Future<PmTilesArchive> fromBytes(List<int> bytes) async {
+    return fromReadAt(MemoryAt(bytes));
+  }
+
   Future<void> close() async {
     return _f.close();
   }

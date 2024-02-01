@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math' as math;
 import 'package:http/http.dart';
 
 // Browsers don't support the File APIs
@@ -83,5 +84,28 @@ class CordBuffer {
         .expand((buffer) => buffer)
         .skip(_offset)
         .toList(growable: growable);
+  }
+}
+
+/// In memory implementation of ReadAt.
+class MemoryAt implements ReadAt {
+  final List<int> bytes;
+
+  MemoryAt(this.bytes);
+
+  @override
+  Future<ByteStream> readAt(int offset, int length) async {
+    if (offset >= bytes.length) {
+      return ByteStream.fromBytes([]);
+    }
+
+    return ByteStream.fromBytes(
+      bytes.sublist(offset, math.min(bytes.length, offset + length)),
+    );
+  }
+
+  @override
+  Future<void> close() async {
+    // Does nothing.
   }
 }
