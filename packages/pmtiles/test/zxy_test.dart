@@ -25,14 +25,15 @@ void main() {
     test('fromTileId', () {
       for (final entry in tests.entries) {
         final zxy = ZXY.fromTileId(entry.value);
-        expect(zxy, equals(entry.key));
+        expect(zxy, equals(entry.key),
+            reason: "ZXY.fromTileId(${entry.value})");
       }
     });
 
     test('toTileId', () {
       for (final entry in tests.entries) {
         final tileId = entry.key.toTileId();
-        expect(tileId, equals(entry.value));
+        expect(tileId, equals(entry.value), reason: "${entry.key}.toTileId()");
       }
     });
   });

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:meta/meta.dart';
 
 /// Convert from Tile ID to ZXY and back.
@@ -52,10 +54,22 @@ class ZXY {
   }
 
   int toTileId() {
-    // https://oeis.org/A002450 for the formula, but it's basically
-    // for (int i = 0; i < z; i++) { tilesOnPreviousLayers += 1 << (i * 2); }
-    final tilesOnPreviousLayers =
-        ((1 << (z * 2)) - 1) ~/ 3; // (pow(4, z) - 1) ~/ 3;
+    // The tile ID is effectively the sum of all possible tiles on previous
+    // layers, and the value of the tile on this layer (as mapped by a Hilbert
+    // curve). e.g
+    //
+    // for (int i = 0; i < z; i++) {
+    //   tilesOnPreviousLayers += 1 << (i * 2);
+    // }
+    //
+    // However that loop can be removed by using the following formula from
+    // https://oeis.org/A002450.
+    final tilesOnPreviousLayers = (pow(4, z) - 1) ~/ 3;
+
+    // We could also replace the `pow(4, z)` with `1 << (z * 2)` but bit
+    // operations are truncated to 32 bits in dart2js.
+    // See https://github.com/dart-lang/sdk/issues/8298
+
     return tilesOnPreviousLayers + _Hilbert.inverse(1 << z, x, y);
   }
 
