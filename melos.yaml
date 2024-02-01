@@ -22,6 +22,16 @@ scripts:
       flutter: false
       dirExists: test
 
+  test:web:
+    description: Run `dart test --platform node` in all dart packages.
+    run: dart test --platform node
+    exec:
+      concurrency: 1
+      failFast: true
+    packageFilters:
+      flutter: false
+      dirExists: test
+
   test:flutter:
     description: Run `flutter test` in all flutter packages.
     run: flutter test
