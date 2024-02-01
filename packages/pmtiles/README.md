@@ -4,7 +4,7 @@ by Andrew Brampton ([bramp.net](https://bramp.net))
 
 Read PMTiles v3 archives stored locally or remotely.
 
-[GitHub]() | [Package](https://pub.dev/packages/pmtiles) | [API Docs](https://pub.dev/documentation/pmtiles/latest/)
+[GitHub](https://github.com/bramp/pmtiles-dart) | [Package](https://pub.dev/packages/pmtiles) | [API Docs](https://pub.dev/documentation/pmtiles/latest/)
 
 ## Usage
 
@@ -74,8 +74,16 @@ Future<int> main() async {
 
 Use `melos bootstrap` to install dependencies and link packages together.
 
-To run all the tests, use `melos test`. Additionally the tests can be run via
-[Node.js](https://nodejs.org/) and [Chrome](https://www.google.com/chrome/)
+The package is broken up into `pmtiles`, `pmtiles_cli` and `pmtiles_tests`. The
+`pmtiles` package contains the core logic and is published to [pub.dev](https://pub.dev/packages/pmtiles).
+`pmtiles_cli` is a simple test command line.
+
+Finally, `pmtiles_tests` is a collection of integration tests, including a suite
+of sample files. This is kept seperate to `pmtiles` so the library remains
+small.
+
+To run all the tests on the dartvm, use `melos test`.  Additionally the tests
+can be run via [Node.js](https://nodejs.org/) and [Chrome](https://www.google.com/chrome/)
 `melos test:node` and `melos test:chrome` respectively. This ensures the library
 works when compiled under dart2js.
 
