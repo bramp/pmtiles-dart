@@ -21,8 +21,6 @@ final sampleDir = path.join(Directory.current.path, 'samples');
 /// Starts a `pmtiles serve` process, that can be used for receiving test
 /// requests.
 hybridMain(StreamChannel channel) async {
-  int port = await getUnusedPort(InternetAddress.loopbackIPv4);
-
   // Find the pmtiles binary
   // We could consider allowing this to be set on the env.
   final pmtiles =
@@ -32,14 +30,23 @@ hybridMain(StreamChannel channel) async {
     throw Exception('Could not find pmtiles binary');
   }
 
+  int port = await getUnusedPort(InternetAddress.loopbackIPv4);
+
   // Invoke `pmtiles serve`.
   Process process = await Process.start(
     pmtiles,
     [
       'serve',
       '.',
+
+      // Use the port we found earlier.
       '--port',
       port.toString(),
+
+      // Allow requests from any origin. This allows the `chrome` browser based
+      // tests to work.
+      '--cors',
+      '*'
     ],
     includeParentEnvironment: false,
     workingDirectory: sampleDir,

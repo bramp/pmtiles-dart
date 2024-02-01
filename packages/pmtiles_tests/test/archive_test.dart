@@ -10,7 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
 final client = http.Client();
-late final port;
+late final int port;
 
 /// Use the pmtiles server to get the tile, as a source of comparision
 Future<http.Response> getReferenceTile(
@@ -60,24 +60,28 @@ void main() async {
     'samples/trails.pmtiles',
   ];
 
-  late final StreamChannel channel;
+  StreamChannel? channel;
 
   setUpAll(() async {
+    // pmtiles_server.dart will spawn a `pmtiles serve` process, for testing.
     channel = spawnHybridUri('pmtiles_server.dart', stayAlive: true);
 
-    // Get the port for for the pmtiles server.
-    port = await channel.stream.first;
+    // Get the port the pmtiles server is running on.
+    port = await channel!.stream.first;
   });
 
   tearDownAll(() async {
     // Tell the pmtiles server to shutdown and wait for the sink to be closed.
-    channel.sink.add("tearDownAll");
-    await channel.sink.done;
+    if (channel != null) {
+      channel!.sink.add("tearDownAll");
+      await channel!.sink.done;
+    }
   });
 
   group('archive', () {
     for (final sample in samples) {
       test('$sample metadata()', () async {
+        // Fetch the reference metadata from the pmtiles server.
         final basename = path.basenameWithoutExtension(sample);
         final expected = json.decoder.convert(
           await http.read(
@@ -85,6 +89,7 @@ void main() async {
           ),
         );
 
+        // Now test our implementation
         final file = File(sample);
         final archive = await PmTilesArchive.fromFile(file);
         try {
