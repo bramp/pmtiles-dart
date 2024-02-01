@@ -9,20 +9,28 @@ import 'package:test/test.dart';
 /// package.
 void main() {
   group('http', () {
-    test('no server', () async {
+    test('Connection Refused', () async {
       try {
         final tiles =
             await PmTilesArchive.fromUri(Uri.parse('http://localhost:1234'));
         tiles.close();
       } on ClientException catch (e) {
-        expect(e.message, equals('Connection refused'));
+        expect(
+            e.message,
+            anyOf(
+              contains('Connection refused'),
+
+              // In the browser, a "ClientException: XMLHttpRequest error" is thrown
+              // which doesn't tell us the error :(, so just skip this test.
+              contains('XMLHttpRequest error'),
+            ));
         return;
       }
 
       fail('Expected ClientException');
-    });
+    }, testOn: "!node");
 
-    test('not found', () async {
+    test('404 Not Found', () async {
       var client = MockClient((request) async {
         return Response("", 404);
       });
@@ -54,5 +62,5 @@ void main() {
 
       fail('Expected PathNotFoundException');
     });
-  });
+  }, testOn: "!js");
 }

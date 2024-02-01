@@ -1,8 +1,8 @@
 import 'dart:collection';
-import 'dart:io';
-
 import 'package:http/http.dart';
-import 'package:pool/pool.dart';
+
+export 'io_file.dart' if (dart.library.js) 'io_web.dart';
+export 'io_http.dart';
 
 /// Simple interface so we can abstract reading from Files, or Http.
 abstract interface class ReadAt {
@@ -11,77 +11,6 @@ abstract interface class ReadAt {
 
   /// Close any resources.
   Future<void> close();
-}
-
-class FileAt implements ReadAt {
-  final File file;
-
-  /// RandomAccessFile only allows a single outstanding read at any time, so
-  /// we open a new RandomAccessFile for each read. To bound the number
-  /// we use a pool to cap us to 8 outstanding reads.
-  final _pool = Pool(8, timeout: Duration(seconds: 30));
-
-  FileAt(this.file);
-
-  @override
-  Future<ByteStream> readAt(final int offset, final int length) async {
-    return _pool.withResource(() async {
-      // TODO Consider caching the open files.
-      final file = await this.file.open(mode: FileMode.read);
-      try {
-        final f = await file.setPosition(offset);
-        final data = await f.read(length);
-
-        return ByteStream.fromBytes(data);
-      } finally {
-        await file.close();
-      }
-    });
-  }
-
-  @override
-  Future<void> close() {
-    return _pool.close();
-  }
-}
-
-class HttpAt implements ReadAt {
-  final Client client;
-  final Uri url;
-  final Map<String, String>? headers;
-
-  // We are assuming the remote server supports range reads.
-  HttpAt(this.client, this.url, {this.headers});
-
-  @override
-  Future<ByteStream> readAt(int offset, int length) async {
-    final request = Request("GET", url);
-
-    if (headers != null) request.headers.addAll(headers!);
-    request.headers[HttpHeaders.rangeHeader] =
-        'bytes=$offset-${offset + length - 1}';
-
-    final response = await client.send(request);
-
-    if (response.statusCode != 206) {
-      throw HttpException('Unexpected status code: ${response.statusCode}');
-    }
-
-    final responseLength = response.headers[HttpHeaders.contentLengthHeader];
-    if (responseLength != null && int.parse(responseLength) != length) {
-      throw HttpException(
-          'Unexpected Content-Length: $responseLength expected $length');
-    }
-
-    // TODO check Content-Range: bytes 0-1023/146515
-
-    return response.stream;
-  }
-
-  @override
-  Future<void> close() async {
-    return client.close();
-  }
 }
 
 /// An List<int> that is made up of a List of List<int>.
