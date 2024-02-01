@@ -30,7 +30,7 @@ extension TileTypeMime on TileType {
         TileType.jpeg => 'image/jpeg',
         TileType.webp => 'image/webp',
         TileType.avif => 'image/avif',
-        _ => throw UnimplementedError('Unknown tile type $this'),
+        _ => throw UnsupportedError('Unknown tile type $this'),
       };
 
   /// Returns the file extension for this tile type.
@@ -40,6 +40,6 @@ extension TileTypeMime on TileType {
         TileType.jpeg => 'jpg',
         TileType.webp => 'webp',
         TileType.avif => 'avif',
-        _ => throw UnimplementedError('Unknown tile type $this'),
+        _ => throw UnsupportedError('Unknown tile type $this'),
       };
 }

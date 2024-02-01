@@ -16,6 +16,6 @@ class CorruptArchiveException implements Exception {
 
   @override
   String toString() {
-    return 'CorruptArchive: $message';
+    return 'CorruptArchiveException: $message';
   }
 }

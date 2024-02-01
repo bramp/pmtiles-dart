@@ -11,6 +11,10 @@ export 'io_http.dart' if (dart.library.node) 'io_http_fake.dart';
 /// Simple interface so we can abstract reading from Files, or Http.
 abstract interface class ReadAt {
   /// Read [length] bytes from [offset].
+  ///
+  /// If offset+length is beyond the end of the file as many bytes as possible
+  /// are returned.
+  // TODO Test the edge case behaviours.
   Future<ByteStream> readAt(int offset, int length);
 
   /// Close any resources.

@@ -8,7 +8,10 @@ import 'convert.dart';
 import 'exceptions.dart';
 import 'types.dart';
 
+// Minimum valid header length.
 const headerLength = 127;
+
+// Max header + root length.
 const headerAndRootMaxLength = 16384;
 
 /// PMTiles Header
@@ -89,7 +92,7 @@ class Header {
     }
 
     if (version != 3) {
-      throw UnsupportedError('Unsupported version "$version"');
+      throw UnsupportedError('Version "$version" files');
     }
 
     if (!strict) {

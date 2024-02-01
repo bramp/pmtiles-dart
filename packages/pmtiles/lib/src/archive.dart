@@ -283,6 +283,11 @@ class PmTilesArchive {
   static Future<PmTilesArchive> fromReadAt(ReadAt f) async {
     final headerAndRoot =
         await (await f.readAt(0, headerAndRootMaxLength)).toBytes();
+
+    if (headerAndRoot.length < headerLength) {
+      throw CorruptArchiveException('Header is too short.');
+    }
+
     final header = Header(
       ByteData.view(
         // Make a copy of the first headerLength (127) bytes.
@@ -297,7 +302,7 @@ class PmTilesArchive {
     }
 
     if (header.clustered == Clustered.notClustered) {
-      throw UnimplementedError('Unclustered archives are not supported.');
+      throw UnsupportedError('Unclustered archives.');
     }
 
     final root = Uint8List.view(
@@ -390,6 +395,6 @@ extension CompressionDecoder on Compression {
         // TODO Add support for the following:
         // Compression.brotli,
         // Compression.zstd,
-        _ => throw UnimplementedError('$this compression is not supported.'),
+        _ => throw UnsupportedError('$this compression.'),
       };
 }
