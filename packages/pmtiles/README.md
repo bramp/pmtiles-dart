@@ -74,6 +74,12 @@ Future<int> main() async {
 
 Use `melos bootstrap` to install dependencies and link packages together.
 
+To run all the tests, use `melos test`. Additionally the tests can be run via
+[Node.js](https://nodejs.org/) and [Chrome](https://www.google.com/chrome/)
+`melos test:node` and `melos test:chrome` respectively. This ensures the library
+works when compiled under dart2js.
+
+
 ## Additional information
 
 The specification is here https://github.com/protomaps/PMTiles/tree/main/spec/v3

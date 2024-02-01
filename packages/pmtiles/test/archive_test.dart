@@ -62,5 +62,5 @@ void main() {
 
       fail('Expected PathNotFoundException');
     });
-  }, testOn: "!js");
+  }, testOn: "!browser");
 }

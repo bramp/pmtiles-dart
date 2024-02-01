@@ -12,21 +12,16 @@ scripts:
       melos run test:dart --no-select && \
       melos run test:flutter --no-select
 
+  test:node:
+    run: melos run test:dart:node --no-select
+
+  test:chrome:
+    run: melos run test:dart:chrome --no-select
+
   test:dart:
     description: Run `dart test` in all dart packages.
     run: dart test
     exec:
-      concurrency: 1
-      failFast: true
-    packageFilters:
-      flutter: false
-      dirExists: test
-
-  test:web:
-    description: Run `dart test --platform node` in all dart packages.
-    run: dart test --platform node
-    exec:
-      concurrency: 1
       failFast: true
     packageFilters:
       flutter: false
@@ -36,10 +31,27 @@ scripts:
     description: Run `flutter test` in all flutter packages.
     run: flutter test
     exec:
-      concurrency: 1
       failFast: true
     packageFilters:
       flutter: true
+      dirExists: test
+
+  test:dart:node:
+    description: Run `dart test --platform node` in all dart packages.
+    run: dart test --platform node
+    exec:
+      concurrency: 1
+      failFast: true
+    packageFilters:
+      dirExists: test
+
+  test:dart:chrome:
+    description: Run `dart test --platform chrome` in all dart packages.
+    run: dart test --platform chrome
+    exec:
+      concurrency: 1
+      failFast: true
+    packageFilters:
       dirExists: test
 
   pmtiles:
