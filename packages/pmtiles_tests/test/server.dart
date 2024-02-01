@@ -24,7 +24,7 @@ Future<int> getUnusedPort([InternetAddress? address]) {
 /// Use like this:
 /// ```dart
 ///   setUpAll(() async {
-///     channel = spawnHybridUri(
+///     final channel = spawnHybridUri(
 ///       'server.dart',
 ///       stayAlive: true,
 ///       message: ServerArgs(
@@ -34,16 +34,14 @@ Future<int> getUnusedPort([InternetAddress? address]) {
 ///       ).toJson(),
 ///     );
 ///
-///     url = await channel!.stream.first;
-///     // Now the server is ready
-///   });
+///     addTearDown(() async {
+///       // Tell the server to shutdown and wait for the sink to be closed.
+///       channel.sink.add("tearDownAll");
+///       await channel.sink.done;
+///     });
 ///
-///   tearDownAll(() async {
-///     // Tell the server to shutdown and wait for the sink to be closed.
-///     if (channel != null) {
-///       channel!.sink.add("tearDownAll");
-///       await channel!.sink.done;
-///     }
+///     url = await channel.stream.first;
+///     // Now the server is ready
 ///   });
 /// ```
 ///
@@ -72,22 +70,20 @@ hybridMain(StreamChannel channel, Object message) async {
     executableFullPath,
     arguments,
     workingDirectory: args.workingDirectory,
-    includeParentEnvironment: false,
+    includeParentEnvironment: args.includeParentEnvironment,
   );
 
   try {
-    // Wait until it prints the 'available' string.
-    final stdout = process.stdout.transform(utf8.decoder).asBroadcastStream();
-    final url = await stdout.firstWhere((line) => line.contains(args.waitFor));
+    // Forward both stdout and stderr to the sink, one line at a time.
+    process.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(channel.sink.add);
 
-    // Then ignore the rest
-    stdout.drain();
-
-    // Always print stderr
-    process.stderr.transform(utf8.decoder).forEach(print);
-
-    // Send the line we found
-    channel.sink.add(url);
+    process.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(channel.sink.add);
 
     // Wait for the channel to receive a message telling us to tearDown.
     await channel.stream.first; // the received message should be "tearDownAll".

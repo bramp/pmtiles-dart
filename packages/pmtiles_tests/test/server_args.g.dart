@@ -8,12 +8,13 @@ part of 'server_args.dart';
 
 ServerArgs _$ServerArgsFromJson(Map<String, dynamic> json) => ServerArgs(
       executable: json['executable'] as String,
-      waitFor: json['waitFor'] as String,
       arguments: (json['arguments'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           const [],
       workingDirectory: json['workingDirectory'] as String?,
+      includeParentEnvironment:
+          json['includeParentEnvironment'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$ServerArgsToJson(ServerArgs instance) =>
@@ -21,5 +22,5 @@ Map<String, dynamic> _$ServerArgsToJson(ServerArgs instance) =>
       'executable': instance.executable,
       'arguments': instance.arguments,
       'workingDirectory': instance.workingDirectory,
-      'waitFor': instance.waitFor,
+      'includeParentEnvironment': instance.includeParentEnvironment,
     };

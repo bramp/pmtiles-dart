@@ -7,17 +7,14 @@ class ServerArgs {
   final String executable;
   final List<String> arguments;
   final String? workingDirectory;
-
-  /// We wait for a log line that contains this string.
-  final String waitFor;
+  final bool includeParentEnvironment;
 
   const ServerArgs({
     required this.executable,
-    required this.waitFor,
     this.arguments = const [],
     this.workingDirectory,
-  })  : assert(executable != ""),
-        assert(waitFor != "");
+    this.includeParentEnvironment = false,
+  }) : assert(executable != "");
 
   factory ServerArgs.fromJson(Map<String, dynamic> json) =>
       _$ServerArgsFromJson(json);

@@ -8,10 +8,12 @@ import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
+import 'io_helpers.dart';
 import 'server_args.dart';
 
 final client = http.Client();
 late final String pmtilesUrl;
+late final String httpUrl;
 final sampleDir = path.join(Directory.current.path, 'samples');
 
 /// Use the pmtiles server to get the tile, as a source of comparision
@@ -35,32 +37,6 @@ dynamic getReferenceMetadata(String sample) async {
   );
 }
 
-/// Wrapper for a ReadAt, that counts how many requests/bytes are read.
-class CountingReadAt implements ReadAt {
-  final ReadAt _inner;
-  int requests = 0;
-  int bytes = 0;
-
-  CountingReadAt(this._inner);
-
-  @override
-  Future<void> close() {
-    return _inner.close();
-  }
-
-  @override
-  Future<http.ByteStream> readAt(int offset, int length) {
-    requests++;
-    bytes += length;
-    return _inner.readAt(offset, length);
-  }
-
-  void reset() {
-    requests = 0;
-    bytes = 0;
-  }
-}
-
 String pmtilesServingToUrl(String logline) {
   return logline.replaceAllMapped(
       RegExp(r'(.* Serving .* port )(\d+)( .* interface )([\d.]+)(.*)'),
@@ -70,7 +46,7 @@ String pmtilesServingToUrl(String logline) {
   // that with localhost.
 }
 
-/// Start a `pmtile server` instance, returning the URL its running on.
+/// Start a `pmtiles serve` instance, returning the URL its running on.
 Future<String> startPmtilesServer() async {
   final channel = spawnHybridUri(
     'server.dart',
@@ -85,11 +61,9 @@ Future<String> startPmtilesServer() async {
 
         // Allow requests from any origin. This allows the `chrome` browser
         // based tests to work.
-        '--cors',
-        '*'
+        '--cors', '*'
       ],
       workingDirectory: 'samples',
-      waitFor: 'Serving',
     ).toJson(),
   );
 
@@ -101,6 +75,36 @@ Future<String> startPmtilesServer() async {
 
   // Get the url pmtiles server is running on.
   return pmtilesServingToUrl(await channel.stream.first);
+}
+
+/// Starts a plain http server, returning the URL its running on.
+Future<String> startHttpServer() async {
+  final channel = spawnHybridUri(
+    'server.dart',
+    stayAlive: true,
+    message: ServerArgs(
+      executable: 'http-server',
+      arguments: ['.'],
+      workingDirectory: 'samples',
+
+      // Needed for `env` in http-server to find `node`.
+      includeParentEnvironment: true,
+    ).toJson(),
+  );
+
+  addTearDown(() async {
+    // Tell the server to shutdown and wait for the sink to be closed.
+    channel.sink.add("tearDownAll");
+    await channel.sink.done;
+  });
+
+  final url = await channel.stream
+      .firstWhere((line) => line.contains("http://127.0.0.1:"), orElse: () {
+    throw Exception('Failed to find available line.');
+  });
+
+  // Get the url server is running on.
+  return (url as String).trim();
 }
 
 // This is very heavy handed, but we'll run a `pmtiles server`, and makes 1000s
@@ -121,85 +125,61 @@ void main() async {
 
   setUpAll(() async {
     pmtilesUrl = await startPmtilesServer();
+    httpUrl = await startHttpServer();
   });
 
-  group('archive', () {
-    for (final sample in samples) {
-      test('$sample metadata()', () async {
-        // Fetch the reference metadata from the pmtiles server.
-        final expected = await getReferenceMetadata(sample);
+  for (final api in ['http', 'file']) {
+    /// Returns the ReadAt for specific sample file. This may differ depending
+    /// on test/environment.
+    ReadAt readAtForSample(String sample) {
+      switch (api) {
+        case 'http':
+          final p = path.basename(sample);
+          return HttpAt(
+            client,
+            Uri.parse('$httpUrl/$p'),
+          );
+        case 'file':
+          return FileAt(File(sample));
+        default:
+          throw Exception('Unknown API: $api');
+      }
+    }
 
-        // Now test our implementation
-        final file = File(sample);
-        final archive = await PmTilesArchive.fromFile(file);
-        try {
-          final actual = await archive.metadata;
-          expect(actual, equals(expected));
-        } finally {
-          await archive.close();
-        }
-      });
+    group('PmTilesArchive (via $api)', () {
+      for (final sample in samples) {
+        test('$sample metadata()', () async {
+          final expected = await getReferenceMetadata(sample);
 
-      test('$sample tile(..)', () async {
-        final file = File(sample);
-        final archive = await PmTilesArchive.fromFile(file);
-        try {
-          final ext = archive.header.tileType.ext();
+          final f = readAtForSample(sample);
+          final archive = await PmTilesArchive.fromReadAt(f);
 
-          // TODO Maybe set this to min/max location
-          for (var id = 0; id < 5400; id++) {
-            final response = await getReferenceTile(sample, id, ext);
-            final expected = response.bodyBytes;
-
-            try {
-              final tile = await archive.tile(id);
-              final actual = Uint8List.fromList(tile.bytes());
-
-              // If we managed to call tiles.tile, then the server should have also
-              // returned a 200 OK
-              expect(200, equals(response.statusCode), reason: 'Tile $id');
-              expect(actual, equals(expected), reason: 'Tile $id');
-            } on TileNotFoundException {
-              // If we throw a TileNotFoundException we should expect the server
-              // to return a 404 Not Found, or a 204 No Content.
-              expect(204, equals(response.statusCode), reason: 'Tile $id');
-            }
+          try {
+            final actual = await archive.metadata;
+            expect(actual, equals(expected));
+          } finally {
+            await archive.close();
           }
-        } finally {
-          await archive.close();
-        }
-      });
+        });
 
-      test('$sample tiles(..)', () async {
-        final file = File(sample);
+        test('$sample tile(..)', () async {
+          final f = readAtForSample(sample);
+          final archive = await PmTilesArchive.fromReadAt(f);
 
-        final archive = await PmTilesArchive.fromFile(file);
-        try {
-          final ext = archive.header.tileType.ext();
-          const groupSize = 16 * 16;
+          try {
+            final ext = archive.header.tileType.ext();
 
-          // TODO Maybe set this to min/max location
-          for (var id = 0; id < 5400; id += groupSize) {
-            final wanted = List.generate(groupSize, (index) => id + index);
-
-            // Fetch and wait for all the tiles in one large go
-            final tiles = await archive.tiles(wanted).toList();
-            expect(tiles.length, wanted.length);
-
-            // Now for each tile, check it matches what we expected
-            for (id in wanted) {
-              final tile = tiles.singleWhere((t) => t.id == id, orElse: () {
-                fail('Failed to find Tile $id in list of fetched tiles $tiles');
-              });
-
+            // TODO Maybe set this to min/max location
+            for (var id = 0; id < 5400; id++) {
               final response = await getReferenceTile(sample, id, ext);
+              final expected = response.bodyBytes;
 
               try {
+                final tile = await archive.tile(id);
                 final actual = Uint8List.fromList(tile.bytes());
-                final expected = response.bodyBytes;
 
-                // If we managed to call tiles.tiles, then the server should
-                // have also returned a 200 OK
+                // If we managed to call tiles.tile, then the server should have also
+                // returned a 200 OK
                 expect(200, equals(response.statusCode), reason: 'Tile $id');
                 expect(actual, equals(expected), reason: 'Tile $id');
               } on TileNotFoundException {
@@ -208,42 +188,89 @@ void main() async {
                 expect(204, equals(response.statusCode), reason: 'Tile $id');
               }
             }
+          } finally {
+            await archive.close();
           }
-        } finally {
-          await archive.close();
-        }
-      });
+        });
 
-      test('$sample tiles(..) counting reads', () async {
-        final file = CountingReadAt(FileAt(File(sample)));
+        test('$sample tiles(..)', () async {
+          final f = readAtForSample(sample);
+          final archive = await PmTilesArchive.fromReadAt(f);
 
-        final archive = await PmTilesArchive.fromReadAt(file);
-        try {
-          // One request to read the header + root directory
-          expect(file.requests, equals(1));
-          expect(file.bytes, equals(16384));
-          file.reset();
+          try {
+            final ext = archive.header.tileType.ext();
+            const groupSize = 16 * 16;
 
-          const groupSize = 16 * 16;
-          final wanted = List.generate(groupSize, (index) => index);
+            // TODO Maybe set this to min/max location
+            for (var id = 0; id < 5400; id += groupSize) {
+              final wanted = List.generate(groupSize, (index) => id + index);
 
-          // Fetch the first groupSize tiles.
-          final tiles = await archive.tiles(wanted).toList();
-          expect(tiles.length, wanted.length);
+              // Fetch and wait for all the tiles in one large go
+              final tiles = await archive.tiles(wanted).toList();
+              expect(tiles.length, wanted.length);
 
-          // Check we made the right number of requests.
-          if (archive.header.leafDirectoriesLength > 0) {
-            // Expect 1 tile + 1 or 2 leaf read (in addition to the header read above).
-            expect(file.requests, inInclusiveRange(2, 3));
-          } else {
-            // Expect 1 tile read (in addition to the header read above).
-            expect(file.requests, equals(1));
+              // Now for each tile, check it matches what we expected
+              for (id in wanted) {
+                final tile = tiles.singleWhere((t) => t.id == id, orElse: () {
+                  fail(
+                      'Failed to find Tile $id in list of fetched tiles $tiles');
+                });
+
+                final response = await getReferenceTile(sample, id, ext);
+                final expected = response.bodyBytes;
+
+                try {
+                  final actual = Uint8List.fromList(tile.bytes());
+
+                  // If we managed to call tiles.tiles, then the server should
+                  // have also returned a 200 OK
+                  expect(200, equals(response.statusCode), reason: 'Tile $id');
+                  expect(actual, equals(expected), reason: 'Tile $id');
+                } on TileNotFoundException {
+                  // If we throw a TileNotFoundException we should expect the server
+                  // to return a 404 Not Found, or a 204 No Content.
+                  expect(204, equals(response.statusCode), reason: 'Tile $id');
+                }
+              }
+            }
+          } finally {
+            await archive.close();
           }
-          file.reset();
-        } finally {
-          await archive.close();
-        }
-      });
-    }
-  }, timeout: Timeout(Duration(minutes: 1)));
+        });
+
+        test('$sample tiles(..) counting reads', () async {
+          final f = CountingReadAt(readAtForSample(sample));
+          final archive = await PmTilesArchive.fromReadAt(f);
+
+          try {
+            // One request to read the header + root directory
+            expect(f.requests, equals(1));
+            expect(f.bytes, equals(16384));
+            f.reset();
+
+            const groupSize = 16 * 16;
+            final wanted = List.generate(groupSize, (index) => index);
+
+            // Fetch the first groupSize tiles.
+            final tiles = await archive.tiles(wanted).toList();
+            expect(tiles.length, wanted.length);
+
+            // Check we made the right number of requests.
+            if (archive.header.leafDirectoriesLength > 0) {
+              // Expect 1 tile + 1 or 2 leaf read (in addition to the header read above).
+              expect(f.requests, inInclusiveRange(2, 3));
+            } else {
+              // Expect 1 tile read (in addition to the header read above).
+              expect(f.requests, equals(1));
+            }
+            f.reset();
+          } finally {
+            await archive.close();
+          }
+        });
+      }
+    }, onPlatform: {
+      ...api == 'file' ? {'js': Skip('File API is not supported in JS')} : {},
+    }, timeout: Timeout(Duration(seconds: 90)));
+  }
 }
