@@ -1,8 +1,12 @@
 import 'dart:collection';
 import 'package:http/http.dart';
 
-export 'io_file.dart' if (dart.library.js) 'io_web.dart';
-export 'io_http.dart';
+// Browsers don't support the File APIs
+export 'io_file.dart' if (dart.library.browser) 'io_file_fake.dart';
+
+// Node doesn't support the HTTP APIs
+// https://github.com/dart-lang/http/issues/1126
+export 'io_http.dart' if (dart.library.node) 'io_http_fake.dart';
 
 /// Simple interface so we can abstract reading from Files, or Http.
 abstract interface class ReadAt {

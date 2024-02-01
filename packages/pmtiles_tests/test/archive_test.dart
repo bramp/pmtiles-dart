@@ -1,3 +1,7 @@
+// Exclude from node because it doesn't support the HTTP APIs needed to get
+// the reference tiles.
+@TestOn('!node')
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -84,7 +88,13 @@ Future<String> startHttpServer() async {
     stayAlive: true,
     message: ServerArgs(
       executable: 'http-server',
-      arguments: ['.'],
+      arguments: [
+        '.',
+
+        // Allow requests from any origin. This allows the `chrome` browser
+        // based tests to work.
+        '--cors', '*'
+      ],
       workingDirectory: 'samples',
 
       // Needed for `env` in http-server to find `node`.
@@ -270,7 +280,9 @@ void main() async {
         });
       }
     }, onPlatform: {
-      ...api == 'file' ? {'js': Skip('File API is not supported in JS')} : {},
+      ...api == 'file'
+          ? {'browser': Skip('File API is not supported in browsers')}
+          : {},
     }, timeout: Timeout(Duration(seconds: 90)));
   }
 }

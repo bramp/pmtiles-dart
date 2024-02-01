@@ -1,5 +1,4 @@
-import 'dart:io'; // TODO Remove this
-
+import 'dart:io';
 import 'package:http/http.dart';
 
 import 'io.dart';

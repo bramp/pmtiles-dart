@@ -1,4 +1,4 @@
-@TestOn('!js') // Exclude from dart2js builds because js doesn't support [File].
+@TestOn('!browser') // Exclude from browsers because they doesn't support [File]
 
 import 'dart:io';
 import 'dart:typed_data';

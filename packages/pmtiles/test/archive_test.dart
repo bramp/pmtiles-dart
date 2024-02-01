@@ -20,8 +20,8 @@ void main() {
             anyOf(
               contains('Connection refused'),
 
-              // In the browser, a "ClientException: XMLHttpRequest error" is thrown
-              // which doesn't tell us the error :(, so just skip this test.
+              // In the browser, a "ClientException: XMLHttpRequest error" is
+              // thrown which doesn't tell us the error :(
               contains('XMLHttpRequest error'),
             ));
         return;

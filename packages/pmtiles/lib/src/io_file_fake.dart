@@ -4,16 +4,16 @@ import 'io.dart';
 
 class FileAt implements ReadAt {
   FileAt(Object file) {
-    throw UnimplementedError('On the web, File APIs are not implemented');
+    throw UnimplementedError('File APIs are not implemented on the web');
   }
 
   @override
   Future<ByteStream> readAt(final int offset, final int length) async {
-    throw UnimplementedError('On the web, File APIs are not implemented');
+    throw UnimplementedError('File APIs are not implemented on the web');
   }
 
   @override
   Future<void> close() {
-    throw UnimplementedError('On the web, File APIs are not implemented');
+    throw UnimplementedError('File APIs are not implemented on the web');
   }
 }
