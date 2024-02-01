@@ -329,7 +329,13 @@ class PmTilesArchive {
     http.Client? client,
     Map<String, String>? headers,
   }) async {
-    return fromReadAt(HttpAt(client ?? http.Client(), url, headers: headers));
+    return fromReadAt(HttpAt(
+      client ?? http.Client(),
+      url,
+      headers: headers,
+      // We ask the HttpAt to close the client if we created it here.
+      closeClient: client == null,
+    ));
   }
 
   /// Opens a PmTiles archive from the given file.

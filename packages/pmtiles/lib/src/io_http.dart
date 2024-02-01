@@ -9,8 +9,11 @@ class HttpAt implements ReadAt {
   final Uri url;
   final Map<String, String>? headers;
 
+  /// Should the client be closed once the HttpAt is finished with
+  final bool closeClient;
+
   // We are assuming the remote server supports range reads.
-  HttpAt(this.client, this.url, {this.headers});
+  const HttpAt(this.client, this.url, {this.headers, this.closeClient = false});
 
   @override
   Future<ByteStream> readAt(int offset, int length) async {
@@ -39,6 +42,8 @@ class HttpAt implements ReadAt {
 
   @override
   Future<void> close() async {
-    return client.close();
+    if (closeClient) {
+      client.close();
+    }
   }
 }
