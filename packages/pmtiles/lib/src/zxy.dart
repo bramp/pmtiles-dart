@@ -17,6 +17,11 @@ class ZXY {
 
   /// Maps a tileId to the appropriate Zoom, X and Y coordinate.
   factory ZXY.fromTileId(int tileId) {
+    const maxAllowedZoom = 26;
+    // Only allow up to 27, so that this library works in places where
+    // doubles are used to represent ints, such as JavaScript.
+    // tildID = 2^53 + 1 = ZXY(27, 67108861, 67108863)
+
     // We search each zoom level finding which one the tile belongs to
     // Then we use a Hilbert curve to map the ID into the X and Y coordinates.
     //
@@ -35,12 +40,12 @@ class ZXY {
       throw FormatException("Tile ID $tileId must be a positive integer.");
     }
 
-    const maxAllowedZoom = 26;
-    // Only allow up to 27, so that this library works in places where
-    // doubles are used to represent ints, such as JavaScript.
-    // tildID = 2^53 + 1 = ZXY(27, 67108861, 67108863)
     for (int z = 0; z <= maxAllowedZoom; z++) {
-      final tilesAtZoom = 1 << (z * 2); // pow(2, x) * pow(2, x)
+      // We could also replace the `pow(2, 2 * z)` with `1 << (2 * z)` but bit
+      // operations are truncated to 32 bits in dart2js.
+      // See https://github.com/dart-lang/sdk/issues/8298
+      final tilesAtZoom = pow(2, 2 * z).toInt();
+
       if (tileId < tilesAtZoom) {
         final (x, y) = _Hilbert.map(1 << z, tileId);
         return ZXY(z, x, y);
@@ -64,9 +69,9 @@ class ZXY {
     //
     // However that loop can be removed by using the following formula from
     // https://oeis.org/A002450.
-    final tilesOnPreviousLayers = (pow(4, z) - 1) ~/ 3;
+    final tilesOnPreviousLayers = (pow(2, 2 * z) - 1) ~/ 3;
 
-    // We could also replace the `pow(4, z)` with `1 << (z * 2)` but bit
+    // We could also replace the `pow(2, 2 * z)` with `1 << (2 * z)` but bit
     // operations are truncated to 32 bits in dart2js.
     // See https://github.com/dart-lang/sdk/issues/8298
 

@@ -24,9 +24,13 @@ void main() {
 
     test('fromTileId', () {
       for (final entry in tests.entries) {
-        final zxy = ZXY.fromTileId(entry.value);
-        expect(zxy, equals(entry.key),
-            reason: "ZXY.fromTileId(${entry.value})");
+        try {
+          final zxy = ZXY.fromTileId(entry.value);
+          expect(zxy, equals(entry.key),
+              reason: "ZXY.fromTileId(${entry.value})");
+        } catch (e) {
+          expect(e, returnsNormally, reason: "ZXY.fromTileId(${entry.value})");
+        }
       }
     });
 
