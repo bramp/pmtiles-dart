@@ -1,23 +1,27 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:pmtiles/pmtiles.dart';
+import 'package:stream_channel/stream_channel.dart';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as p;
+import 'package:path/path.dart' as path;
 
-/// Gets a free port on the local machine.
-/// Borrowed from https://stackoverflow.com/a/14095888/88646
-/// This is racy, because we don't hold the port open, but it's good enough for
-/// our purposes.
-Future<int> getUnusedPort(InternetAddress? address) {
-  return ServerSocket.bind(address ?? InternetAddress.loopbackIPv4, 0)
-      .then((socket) {
-    var port = socket.port;
-    socket.close();
-    return port;
-  });
+final client = http.Client();
+late final port;
+
+/// Use the pmtiles server to get the tile, as a source of comparision
+Future<http.Response> getReferenceTile(
+    String archive, int tildId, String ext) async {
+  final t = ZXY.fromTileId(tildId);
+
+  final basename = path.basenameWithoutExtension(archive);
+  final response = await client.get(
+    Uri.parse('http://localhost:$port/$basename/${t.z}/${t.x}/${t.y}.$ext'),
+  );
+  return response;
 }
 
 class CountingReadAt implements ReadAt {
@@ -48,11 +52,6 @@ class CountingReadAt implements ReadAt {
 // This is very heavy handed, but we'll run a pmtiles server, and compare
 // the results to our library.
 void main() async {
-  final port = await getUnusedPort(InternetAddress.loopbackIPv4);
-  Process? process;
-  final client = http.Client();
-
-  final sampleDir = p.join(Directory.current.path, 'samples');
   final samples = [
     'samples/countries.pmtiles',
     'samples/countries-raster.pmtiles',
@@ -61,65 +60,28 @@ void main() async {
     'samples/trails.pmtiles',
   ];
 
+  late final StreamChannel channel;
+
   setUpAll(() async {
-    // Find the pmtiles binary
-    // We could consider allowing this to be set on the env.
-    final pmtiles =
-        Process.runSync('which', ['pmtiles']).stdout.toString().trim();
+    channel = spawnHybridUri('pmtiles_server.dart', stayAlive: true);
 
-    expect(pmtiles, isNotEmpty, reason: 'Could not find pmtiles binary');
-
-    // Invoke `pmtiles serve`.
-    process = await Process.start(
-      pmtiles,
-      [
-        'serve',
-        '.',
-        '--port',
-        port.toString(),
-      ],
-      includeParentEnvironment: false,
-      workingDirectory: sampleDir,
-    );
-
-    // Wait until it prints 'Serving ... on port'
-    final stdout = process!.stdout.transform(utf8.decoder).asBroadcastStream();
-    await stdout.firstWhere((line) => line.contains('Serving'));
-
-    // Then ignore the rest
-    stdout.drain();
-
-    // Always print stderr
-    process!.stderr.transform(utf8.decoder).forEach(print);
+    // Get the port for for the pmtiles server.
+    port = await channel.stream.first;
   });
 
   tearDownAll(() async {
-    expect(process, isNotNull,
-        reason: '`pmtiles serve` process was not started');
-
-    process!.kill();
-    await process!.exitCode;
+    // Tell the pmtiles server to shutdown and wait for the sink to be closed.
+    channel.sink.add("tearDownAll");
+    await channel.sink.done;
   });
-
-  /// Use the pmtiles server to get the tile, as a source of comparision
-  Future<http.Response> getReferenceTile(
-      String archive, int tildId, String ext) async {
-    final t = ZXY.fromTileId(tildId);
-
-    final response = await client.get(
-      Uri.parse(
-          'http://localhost:$port/${p.basenameWithoutExtension(archive)}/${t.z}/${t.x}/${t.y}.$ext'),
-    );
-    return response;
-  }
 
   group('archive', () {
     for (final sample in samples) {
       test('$sample metadata()', () async {
+        final basename = path.basenameWithoutExtension(sample);
         final expected = json.decoder.convert(
           await http.read(
-            Uri.parse(
-                'http://localhost:$port/${p.basenameWithoutExtension(sample)}/metadata'),
+            Uri.parse('http://localhost:$port/$basename/metadata'),
           ),
         );
 
