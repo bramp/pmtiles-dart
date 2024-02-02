@@ -17,7 +17,7 @@ class HttpAt implements ReadAt {
   @override
   Future<ByteStream> readAt(int offset, int length) async {
     try {
-      final request = Request("GET", url);
+      final request = Request('GET', url);
 
       if (headers != null) request.headers.addAll(headers!);
       request.headers[HttpHeaders.rangeHeader] =

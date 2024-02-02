@@ -15,13 +15,13 @@ void main() {
 
   test('HTTP API is available', () {
     final client = http.Client();
-    expect(() => HttpAt(client, Uri.parse("http://localhost/")).readAt(0, 1),
+    expect(() => HttpAt(client, Uri.parse('http://localhost/')).readAt(0, 1),
         returnsNormally);
   }, testOn: '!node');
 
   test('HTTP API is not available', () {
     final client = http.Client();
-    expect(() => HttpAt(client, Uri.parse("http://localhost/")).readAt(0, 1),
+    expect(() => HttpAt(client, Uri.parse('http://localhost/')).readAt(0, 1),
         throwsUnsupportedError);
   }, testOn: 'node');
 }

@@ -123,7 +123,7 @@ class PmTilesArchive {
         final Entry cur = entriesToTileIds[i].key;
         final Entry next = entriesToTileIds[i + 1].key;
         assert(cur.offset + cur.length == next.offset,
-            "Expect entries $cur and $next to be contingous");
+            'Expect entries $cur and $next to be contingous');
       }
 
       return true;
@@ -141,7 +141,7 @@ class PmTilesArchive {
         // Current entry being processed
         final i = entriesToTileIds.iterator;
         final more = i.moveNext();
-        assert(more, "Expected there to be atleast one entry");
+        assert(more, 'Expected there to be atleast one entry');
 
         // Current read offset
         int offset = begin;
@@ -159,7 +159,7 @@ class PmTilesArchive {
           Entry entry = i.current.key;
           while (buffer.length >= entry.length) {
             assert(offset == entry.offset,
-                "Expected the entry $entry to start at the current offset ${hexPad(offset)}");
+                'Expected the entry $entry to start at the current offset ${hexPad(offset)}');
 
             final bytes = buffer.getRange(0, entry.length).toList();
             for (final tileId in i.current.value) {
@@ -184,7 +184,7 @@ class PmTilesArchive {
         }
 
         assert(buffer.length == 0,
-            "Expected to have read all the bytes but ${buffer.length} remain");
+            'Expected to have read all the bytes but ${buffer.length} remain');
       },
     );
   }
@@ -263,7 +263,7 @@ class PmTilesArchive {
   Future<Directory> _loadLeaf(int offset, int length) async {
     if (offset + length > header.leafDirectoriesLength) {
       throw CorruptArchiveException(
-          "Directory Entry points outside of leaf directory.");
+          'Directory Entry points outside of leaf directory.');
     }
 
     // TODO Consider if we want to cache leafs.

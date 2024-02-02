@@ -39,7 +39,7 @@ class ZXY {
     //   |12|3423|1763|19078479|
     //
     if (tileId < 0) {
-      throw FormatException("Tile ID $tileId must be a positive integer.");
+      throw FormatException('Tile ID $tileId must be a positive integer.');
     }
 
     for (int z = 0; z <= maxAllowedZoom; z++) {
@@ -57,7 +57,7 @@ class ZXY {
     }
 
     throw FormatException(
-        "max zoom depth of $maxAllowedZoom exceeded while decoding $tileId");
+        'max zoom depth of $maxAllowedZoom exceeded while decoding $tileId');
   }
 
   int toTileId() {

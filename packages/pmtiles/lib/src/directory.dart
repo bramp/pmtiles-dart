@@ -64,7 +64,7 @@ class Directory {
 
     if (uncompressed.length < n * 4) {
       throw CorruptArchiveException(
-          "Directory is too short for $n entries, only ${uncompressed.length} bytes");
+          'Directory is too short for $n entries, only ${uncompressed.length} bytes');
     }
 
     final entries = <Entry>[];
@@ -98,7 +98,7 @@ class Directory {
         if (i == 0) {
           // Should we treat this as starting at the beginning of the range?
           throw CorruptArchiveException(
-              "Invalid offset of zero in first entry of directory");
+              'Invalid offset of zero in first entry of directory');
         }
 
         final prevEntry = entries[i - 1];
@@ -115,13 +115,13 @@ class Directory {
             entry.isLeaf ? header.leafDirectoriesLength : header.tileDataLength;
         if (entry.offset + entry.length > maxOffset) {
           throw CorruptArchiveException(
-              "Offset:${entry.offset} len:${entry.length} points outside of allowed range $maxOffset");
+              'Offset:${entry.offset} len:${entry.length} points outside of allowed range $maxOffset');
         }
       }
     }
 
     assert(entries.isSorted((a, b) => a.tileId.compareTo(b.tileId)));
-    assert(reader.isAtEnd(), "We should have read everything");
+    assert(reader.isAtEnd(), 'We should have read everything');
 
     return Directory(entries: entries);
   }

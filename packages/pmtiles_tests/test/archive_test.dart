@@ -47,7 +47,7 @@ dynamic getReferenceMetadata(String sample) async {
 String pmtilesServingToUrl(String logline) {
   return logline.replaceAllMapped(
       RegExp(r'(.* Serving .* port )(\d+)( .* interface )([\d.]+)(.*)'),
-      (Match m) => "http://${m[4]}:${m[2]}");
+      (Match m) => 'http://${m[4]}:${m[2]}');
   // ${m[4]} may be 0.0.0.0, which seems to allow us to connect to (on my
   // mac), but I'm not sure that's valid everywhere. Maybe we replaced
   // that with localhost.
@@ -76,7 +76,7 @@ Future<String> startPmtilesServer() async {
 
   addTearDown(() async {
     // Tell the pmtiles server to shutdown and wait for the sink to be closed.
-    channel.sink.add("tearDownAll");
+    channel.sink.add('tearDownAll');
     await channel.sink.done;
   });
 
@@ -107,12 +107,12 @@ Future<String> startHttpServer() async {
 
   addTearDown(() async {
     // Tell the server to shutdown and wait for the sink to be closed.
-    channel.sink.add("tearDownAll");
+    channel.sink.add('tearDownAll');
     await channel.sink.done;
   });
 
   final url = await channel.stream
-      .firstWhere((line) => line.contains("http://127.0.0.1:"), orElse: () {
+      .firstWhere((line) => line.contains('http://127.0.0.1:'), orElse: () {
     throw Exception('Failed to find available line.');
   });
 

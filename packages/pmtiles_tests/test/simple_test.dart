@@ -1,5 +1,5 @@
-import "package:pmtiles/pmtiles.dart";
-import "package:test/test.dart";
+import 'package:pmtiles/pmtiles.dart';
+import 'package:test/test.dart';
 import 'package:convert/convert.dart';
 
 // We include the test files, so this can work on all platforms.
@@ -87,7 +87,7 @@ void main() async {
     final name = e.key;
     final fixture = e.value;
 
-    test("PmTilesArchive($name).metadata", () async {
+    test('PmTilesArchive($name).metadata', () async {
       expect(() async => await PmTilesArchive.fromBytes(hex.decode(fixture)),
           expected[name]!);
     });

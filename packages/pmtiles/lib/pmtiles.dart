@@ -15,4 +15,4 @@ export 'src/zxy.dart';
 export 'src/io.dart';
 
 /// Mime type for PMTiles.
-const mimeType = "application/vnd.pmtiles";
+const mimeType = 'application/vnd.pmtiles';

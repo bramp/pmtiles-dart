@@ -28,11 +28,11 @@ void main() {
       }
 
       fail('Expected ClientException');
-    }, testOn: "!node");
+    }, testOn: '!node');
 
     test('404 Not Found', () async {
       var client = MockClient((request) async {
-        return Response("", 404);
+        return Response('', 404);
       });
 
       try {
@@ -53,7 +53,7 @@ void main() {
   group('file', () {
     test('not found', () async {
       try {
-        final tiles = await PmTilesArchive.fromFile(File("not-found"));
+        final tiles = await PmTilesArchive.fromFile(File('not-found'));
         tiles.close();
       } on PathNotFoundException catch (e) {
         expect(e.message, contains('Cannot open file'));
@@ -62,5 +62,5 @@ void main() {
 
       fail('Expected PathNotFoundException');
     });
-  }, testOn: "!browser");
+  }, testOn: '!browser');
 }

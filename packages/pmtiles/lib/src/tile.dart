@@ -23,7 +23,7 @@ class Tile {
   })  : _bytes = bytes,
         _exception = exception,
         assert(bytes != null || exception != null,
-            "One of bytes or exception must be set");
+            'One of bytes or exception must be set');
 
   /// The tile's uncompressed bytes.
   /// This may throw an Exception if there was an issue reading or decompressing

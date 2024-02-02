@@ -5,15 +5,15 @@ import 'package:pmtiles/pmtiles.dart';
 
 class ZxyCommand extends Command {
   @override
-  final name = "zxy";
+  final name = 'zxy';
 
   @override
-  final description = "Converts between tile ID and Z X Y.";
+  final description = 'Converts between tile ID and Z X Y.';
 
   @override
   String get invocation {
-    return "pmtiles zxy <tileId>\n"
-        "   or: pmtiles zxy <z> <x> <y>";
+    return 'pmtiles zxy <tileId>\n'
+        '   or: pmtiles zxy <z> <x> <y>';
   }
 
   @override
@@ -36,15 +36,15 @@ class ZxyCommand extends Command {
       return;
     }
 
-    throw UsageException("", usage);
+    throw UsageException('', usage);
   }
 }
 
 class ShowCommand extends Command {
   @override
-  final name = "show";
+  final name = 'show';
   @override
-  final description = "Show metadata related to a archive.";
+  final description = 'Show metadata related to a archive.';
 
   ShowCommand() {
     argParser.addFlag('show-metadata', defaultsTo: true, aliases: ['m']);
@@ -53,23 +53,23 @@ class ShowCommand extends Command {
 
   @override
   String get invocation {
-    return "pmtiles show <archive>";
+    return 'pmtiles show <archive>';
   }
 
   @override
   void run() async {
     if (argResults!.rest.length != 1) {
-      throw UsageException("Must provide a single archive", usage);
+      throw UsageException('Must provide a single archive', usage);
     }
 
     final file = argResults!.rest[0];
     final tiles = await PmTilesArchive.from(file);
     try {
-      print("Header:");
+      print('Header:');
       print(tiles.header);
 
       if (argResults!['show-metadata']) {
-        print("Metadata:");
+        print('Metadata:');
 
         final encoder = JsonEncoder.withIndent('  ');
         String prettyJson = encoder.convert(await tiles.metadata);
@@ -77,8 +77,8 @@ class ShowCommand extends Command {
       }
 
       if (argResults!['show-root']) {
-        print("Root:");
-        print("  ${tiles.root}");
+        print('Root:');
+        print('  ${tiles.root}');
       }
     } finally {
       await tiles.close();
@@ -88,10 +88,10 @@ class ShowCommand extends Command {
 
 class TileCommand extends Command {
   @override
-  final name = "tile";
+  final name = 'tile';
   @override
   final description =
-      "Fetch one tile from a local or remote archive and output on stdout.";
+      'Fetch one tile from a local or remote archive and output on stdout.';
 
   TileCommand() {
     argParser.addFlag('uncompress', defaultsTo: true);
@@ -99,13 +99,13 @@ class TileCommand extends Command {
 
   @override
   String get invocation {
-    return "pmtiles tile [<options>] <archive> <tileId>";
+    return 'pmtiles tile [<options>] <archive> <tileId>';
   }
 
   @override
   void run() async {
     if (argResults!.rest.length != 2) {
-      throw UsageException("", usage);
+      throw UsageException('', usage);
     }
 
     final file = argResults!.rest[0];
@@ -123,7 +123,7 @@ class TileCommand extends Command {
 }
 
 main(List<String> args) async {
-  CommandRunner("pmtiles", "A pmtiles command line tool (written in dart).")
+  CommandRunner('pmtiles', 'A pmtiles command line tool (written in dart).')
     ..addCommand(ShowCommand())
     ..addCommand(TileCommand())
     ..addCommand(ZxyCommand())

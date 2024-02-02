@@ -8,9 +8,9 @@ String byteDataToHex(ByteData bd) {
   final line = List.empty(growable: true);
   for (final b in bd.buffer.asUint8List()) {
     if (b < 16) {
-      line.add("0x0${b.toRadixString(16)}");
+      line.add('0x0${b.toRadixString(16)}');
     } else {
-      line.add("0x${b.toRadixString(16)}");
+      line.add('0x${b.toRadixString(16)}');
     }
   }
 
@@ -377,7 +377,7 @@ void main() {
 
         expect(bd.getSafeUint64(0, endian).toString(), t.$2, reason: t.$1);
       }
-    }, testOn: "!js");
+    }, testOn: '!js');
 
     // On JS Platforms this should throw exceptions
     test('getFixNumUint64 ($endian) > 2^53', () {
@@ -390,7 +390,7 @@ void main() {
         expect(() => bd.getSafeUint64(0, endian), throwsUnsupportedError,
             reason: t.$1);
       }
-    }, testOn: "js");
+    }, testOn: 'js');
 
     test('getFixNumUint64 ($endian) == getUint64($endian)', () {
       for (final t in (testcases + bigTestcases)) {
@@ -414,6 +414,6 @@ void main() {
         expect(bd.getSafeUint64(0, endian).toString(),
             bd.getUint64(0, endian).toString());
       }
-    }, testOn: "!js");
+    }, testOn: '!js');
   }
 }

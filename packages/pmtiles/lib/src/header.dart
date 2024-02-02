@@ -87,7 +87,7 @@ class Header {
   /// If [strict] is true, then additional checks are made.
   void validate({bool strict = false}) {
     final magic = utf8.decode(this.magic, allowMalformed: true);
-    if (magic != "PMTiles") {
+    if (magic != 'PMTiles') {
       throw CorruptArchiveException(
           'Invalid magic in header file, found "$magic"');
     }

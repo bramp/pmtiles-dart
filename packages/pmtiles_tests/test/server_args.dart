@@ -14,7 +14,7 @@ class ServerArgs {
     this.arguments = const [],
     this.workingDirectory,
     this.includeParentEnvironment = false,
-  }) : assert(executable != "");
+  }) : assert(executable != '');
 
   factory ServerArgs.fromJson(Map<String, dynamic> json) =>
       _$ServerArgsFromJson(json);

@@ -27,9 +27,9 @@ void main() {
         try {
           final zxy = ZXY.fromTileId(entry.value);
           expect(zxy, equals(entry.key),
-              reason: "ZXY.fromTileId(${entry.value})");
+              reason: 'ZXY.fromTileId(${entry.value})');
         } catch (e) {
-          expect(e, returnsNormally, reason: "ZXY.fromTileId(${entry.value})");
+          expect(e, returnsNormally, reason: 'ZXY.fromTileId(${entry.value})');
         }
       }
     });
@@ -37,7 +37,7 @@ void main() {
     test('toTileId', () {
       for (final entry in tests.entries) {
         final tileId = entry.key.toTileId();
-        expect(tileId, equals(entry.value), reason: "${entry.key}.toTileId()");
+        expect(tileId, equals(entry.value), reason: '${entry.key}.toTileId()');
       }
     });
   });

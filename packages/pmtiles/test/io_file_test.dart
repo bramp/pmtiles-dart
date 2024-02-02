@@ -13,7 +13,7 @@ void main() {
 
     setUp(() async {
       directory = await Directory.systemTemp.createTemp();
-      tempFile = File("${directory!.path}/test_file");
+      tempFile = File('${directory!.path}/test_file');
 
       final f = await tempFile.create();
       await f.writeAsBytes(

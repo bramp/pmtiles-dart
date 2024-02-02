@@ -43,7 +43,7 @@ class CordBuffer {
   }
 
   void removeRange(int start, int end) {
-    assert(start == 0, "Sorry only zero is supported");
+    assert(start == 0, 'Sorry only zero is supported');
     assert(start <= end);
     assert(end <= length);
 
@@ -65,7 +65,7 @@ class CordBuffer {
     }
 
     assert(remaining == 0,
-        "Should have removed all the data, but $remaining remain");
+        'Should have removed all the data, but $remaining remain');
   }
 
   Iterable<int> getRange(int start, int end) {

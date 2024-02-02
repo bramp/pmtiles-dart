@@ -5,20 +5,20 @@ import 'package:pmtiles/pmtiles.dart';
 /// A simple example of reading a PmTiles archive.
 Future<int> main() async {
   // Open the archive from a file. HTTP URLs are also acceptable.
-  final archive = await PmTilesArchive.from("/path/to/file.pmtiles");
+  final archive = await PmTilesArchive.from('/path/to/file.pmtiles');
   try {
     // # Metadata
     // Information about the archive is available in the header and metadata.
-    print("Header:");
+    print('Header:');
     print(archive.header);
 
     // Some interesting fields are also on the main tiles archive object.
-    print("Type: ${archive.tileType}"); // e.g  mvt, png, jpg, etc.
-    print("Compression: ${archive.tileCompression}"); // e.g gzip, brotli, etc.
+    print('Type: ${archive.tileType}'); // e.g  mvt, png, jpg, etc.
+    print('Compression: ${archive.tileCompression}'); // e.g gzip, brotli, etc.
 
     // The metadata is a embedded JSON object, as described here:
     // https://github.com/protomaps/PMTiles/blob/main/spec/v3/spec.md#5-json-metadata
-    print("Metadata:");
+    print('Metadata:');
     final prettyJson = JsonEncoder.withIndent('  ') // for clarity pretty print
         .convert(await archive.metadata);
     print(prettyJson);
@@ -46,7 +46,7 @@ Future<int> main() async {
     // available from the archive. This is optimised to reduce the requests
     // to the archive's backing store, leading to faster extraction.
     await for (final tile in tiles) {
-      print("${tile.id} is available");
+      print('${tile.id} is available');
 
       // Again the bytes are available via:
       tile.bytes();
