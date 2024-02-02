@@ -7,6 +7,7 @@ import 'package:meta/meta.dart';
 import 'convert.dart';
 import 'exceptions.dart';
 import 'types.dart';
+import 'int64.dart';
 
 // Minimum valid header length.
 const headerLength = 127;
@@ -44,23 +45,23 @@ class Header {
 
   Uint8List get magic => data.buffer.asUint8List(0x00, 0x07);
   int get version => data.getUint8(0x07);
-  int get rootDirectoryOffset => data.getUint64(0x08, Endian.little);
-  int get rootDirectoryLength => data.getUint64(0x10, Endian.little);
-  int get metadataOffset => data.getUint64(0x18, Endian.little);
-  int get metadataLength => data.getUint64(0x20, Endian.little);
-  int get leafDirectoriesOffset => data.getUint64(0x28, Endian.little);
-  int get leafDirectoriesLength => data.getUint64(0x30, Endian.little);
-  int get tileDataOffset => data.getUint64(0x38, Endian.little);
-  int get tileDataLength => data.getUint64(0x40, Endian.little);
+  int get rootDirectoryOffset => data.getSafeUint64(0x08, Endian.little);
+  int get rootDirectoryLength => data.getSafeUint64(0x10, Endian.little);
+  int get metadataOffset => data.getSafeUint64(0x18, Endian.little);
+  int get metadataLength => data.getSafeUint64(0x20, Endian.little);
+  int get leafDirectoriesOffset => data.getSafeUint64(0x28, Endian.little);
+  int get leafDirectoriesLength => data.getSafeUint64(0x30, Endian.little);
+  int get tileDataOffset => data.getSafeUint64(0x38, Endian.little);
+  int get tileDataLength => data.getSafeUint64(0x40, Endian.little);
 
   /// TODO Figure out what this field means.
-  int get numberOfAddressedTiles => data.getUint64(0x48, Endian.little);
+  int get numberOfAddressedTiles => data.getSafeUint64(0x48, Endian.little);
 
   /// Number of tile entries in the directories. (I think)
-  int get numberOfTileEntries => data.getUint64(0x50, Endian.little);
+  int get numberOfTileEntries => data.getSafeUint64(0x50, Endian.little);
 
   /// Number of unique tiles in the Tile Data. (I think)
-  int get numberOfTileContents => data.getUint64(0x58, Endian.little);
+  int get numberOfTileContents => data.getSafeUint64(0x58, Endian.little);
 
   Clustered get clustered => data.getClustered(0x60);
 
