@@ -149,6 +149,9 @@ Pushing a tag matching `pmtiles-v*` triggers the
 [publish workflow](.github/workflows/publish.yml), which automatically
 publishes to pub.dev via OIDC.
 
+To release a new version, use `melos version pmtiles minor; git push
+--follow-tags` and the [Github action](https://github.com/bramp/pmtiles-dart/actions/workflows/publish.yml) should publish to [pub.dev](https://pub.dev/packages/pmtiles).
+
 ## Additional information
 
 The specification is here https://github.com/protomaps/PMTiles/tree/main/spec/v3
