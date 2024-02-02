@@ -23,9 +23,11 @@ void generateTestValues() {
     final bd = ByteData(8);
 
     bd.setUint64(0, (1 << i) - 1);
+    // ignore: avoid_print
     print("('2^$i-1', '${(1 << i) - 1}', ${byteDataToHex(bd)})");
 
     bd.setUint64(0, 1 << i);
+    // ignore: avoid_print
     print("('2^$i',  '${1 << i}', ${byteDataToHex(bd)})");
   }
 }
