@@ -15,4 +15,8 @@ https://github.com/klokantech/vector-tiles-sample
 
 * {empty,invalid,invalid_v4,test_fixture_1,test_fixture_2}.pmtiles - Examples taken from https://github.com/protomaps/PMTiles/tree/main/js/test/data
 
+* protomaps(vector)ODbL_firenze.pmtiles,
+  stamen_toner(raster)CC-BY+ODbL_z3.pmtiles,
+  usgs-mt-whitney-8-15-webp-512.pmtiles - Examples from the v3 spec: https://github.com/protomaps/PMTiles/tree/main/spec/v3
+
 A large sample can be found at https://docs.protomaps.com/basemaps/downloads

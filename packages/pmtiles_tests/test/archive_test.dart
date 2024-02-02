@@ -34,11 +34,13 @@ Future<http.Response> getReferenceTile(
 
 dynamic getReferenceMetadata(String sample) async {
   final basename = path.basenameWithoutExtension(sample);
-  return json.decoder.convert(
-    await http.read(
-      Uri.parse('$pmtilesUrl/$basename/metadata'),
-    ),
-  );
+  final response =
+      await client.get(Uri.parse('$pmtilesUrl/$basename/metadata'));
+
+  // JSON response is UTF-8, but by default Dart HTTP's library thinks all
+  // responses are ISO-8859-1. So for our testing purposes we explictly
+  // decode it.
+  return json.decoder.convert(utf8.decode(response.bodyBytes));
 }
 
 String pmtilesServingToUrl(String logline) {
@@ -131,6 +133,9 @@ void main() async {
     'samples/countries-leaf.pmtiles',
     'samples/countries-leafs.pmtiles',
     'samples/trails.pmtiles',
+    'samples/protomaps(vector)ODbL_firenze.pmtiles',
+    'samples/stamen_toner(raster)CC-BY+ODbL_z3.pmtiles',
+    'samples/usgs-mt-whitney-8-15-webp-512.pmtiles',
   ];
 
   setUpAll(() async {
