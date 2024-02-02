@@ -1,3 +1,7 @@
+## 1.3.0
+
+ - Added support for dart2js builds
+
 ## 1.2.0
 
  - Bumped dependencies to align with latest flutter.
