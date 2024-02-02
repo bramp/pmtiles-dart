@@ -20,7 +20,9 @@ abstract interface class ReadAt {
   Future<void> close();
 }
 
-/// An List<int> that is made up of a List of List<int>.
+/// An List<int> that is made up internally of a List of List<int>.
+// TODO Merge sublist and removeRange. Both are always called at the
+// same time, so we can do it in one pass.
 class CordBuffer {
   final _buffers = Queue<List<int>>();
 
@@ -47,7 +49,7 @@ class CordBuffer {
     assert(start <= end);
     assert(end <= length);
 
-    var remaining = end;
+    int remaining = end;
     while (remaining > 0 && _buffers.isNotEmpty) {
       final buffer = _buffers.first;
 
@@ -68,13 +70,38 @@ class CordBuffer {
         'Should have removed all the data, but $remaining remain');
   }
 
-  Iterable<int> getRange(int start, int end) {
-    // TODO This is making a copy. We could write our own loop, and return
-    // a view of the data.
-    return _buffers
-        .expand((buffer) => buffer)
-        .skip(_offset + start)
-        .take(end - start);
+  /// Returns a single sublist made up of a copy of the data in the buffers.
+  List<int> sublist(final int start, final int end) {
+    assert(start == 0, 'Sorry only zero is supported');
+    assert(start <= end);
+    assert(end <= length);
+
+    final result = List<int>.empty(growable: true);
+    int remaining = end - start;
+
+    final b = _buffers.iterator;
+    int offset = _offset;
+
+    while (b.moveNext()) {
+      final remainingInBuffer = b.current.length - offset;
+      final toCopy = math.min(remainingInBuffer, remaining);
+
+      result.addAll(b.current.sublist(offset, offset + toCopy));
+
+      offset = 0;
+      remaining -= toCopy;
+
+      if (remaining == 0) {
+        break;
+      }
+    }
+
+    assert(remaining == 0,
+        'Should have removed all the data, but $remaining remain');
+    assert(result.length == end - start,
+        'Results length is wrong ${result.length} != ${end - start}');
+
+    return result;
   }
 
   List<int> toList({bool growable = true}) {

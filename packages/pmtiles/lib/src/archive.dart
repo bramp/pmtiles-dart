@@ -161,7 +161,7 @@ class PmTilesArchive {
             assert(offset == entry.offset,
                 'Expected the entry $entry to start at the current offset ${hexPad(offset)}');
 
-            final bytes = buffer.getRange(0, entry.length).toList();
+            final bytes = buffer.sublist(0, entry.length);
             for (final tileId in i.current.value) {
               // For each tile this entry maps to, publish it.
               controller.add(Tile(
