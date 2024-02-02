@@ -1,6 +1,6 @@
 import 'package:http/http.dart';
 
-import 'io.dart';
+import '../io.dart';
 
 class FileAt implements ReadAt {
   FileAt(Object file) {

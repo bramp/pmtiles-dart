@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:http/http.dart';
 import 'package:pool/pool.dart';
 
-import 'io.dart';
+import '../io.dart';
 
 class FileAt implements ReadAt {
   final File file;

@@ -2,8 +2,8 @@ import 'dart:collection';
 import 'dart:math' as math;
 import 'package:http/http.dart';
 
-export 'io_file_fake.dart' //
-    if (dart.library.io) 'io_file.dart'; // JS don't support the File APIs
+export 'js/io_file.dart' //
+    if (dart.library.io) 'native/io_file.dart'; // JS don't support the File APIs
 
 export 'io_http.dart';
 

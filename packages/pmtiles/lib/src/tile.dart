@@ -1,4 +1,5 @@
-import 'package:pmtiles/pmtiles.dart';
+import 'compression.dart';
+import 'types.dart';
 
 /// Represents a single tile in the archive.
 class Tile {

@@ -8,7 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
-import 'convert.dart';
+import 'compression.dart';
 import 'directory.dart';
 import 'exceptions.dart';
 import 'header.dart';
@@ -392,16 +392,4 @@ class PmTilesArchive {
   /// A reader MAY use this as the initial center position when displaying tiles
   /// from the PMTiles archive.
   LatLng get centerPosition => header.centerPosition;
-}
-
-extension CompressionDecoder on Compression {
-  // TODO I wonder if we can change this to Converter<Uint8List, Uint8List>
-  Converter<List<int>, List<int>> decoder() => switch (this) {
-        Compression.none => nullConverter,
-        Compression.gzip => zlib.decoder,
-        // TODO Add support for the following:
-        // Compression.brotli,
-        // Compression.zstd,
-        _ => throw UnsupportedError('$this compression.'),
-      };
 }

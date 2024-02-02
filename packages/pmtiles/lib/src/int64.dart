@@ -1,2 +1,2 @@
-export 'int64_native.dart' //
-    if (dart.library.js) 'int64_js.dart';
+export 'native/int64.dart' //
+    if (dart.library.js) 'js/int64.dart'; // JS don't support int64 well

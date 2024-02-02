@@ -22,7 +22,12 @@ dependencies:
   protobuf: ^3.1.0
 
   pool: ^1.5.1
+
+  # For reading 64bit ints in dart2js
   fixnum: ^1.1.0
+
+  # For decoding compressed data
+  archive: ^3.4.10
 
 dev_dependencies:
   lints: ^3.0.0

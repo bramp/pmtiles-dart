@@ -2,14 +2,18 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:latlong2/latlong.dart';
-import 'package:pmtiles/pmtiles.dart';
+import 'package:meta/meta.dart';
+
+import 'exceptions.dart';
+import 'types.dart';
 
 /// Converting between types.
 ///
 
 /// Convenient class to do nothing, but can be used in places where we assume
 /// a converter is required.
-class NullConverter<S> extends Converter<S, S> {
+@immutable
+final class NullConverter<S> extends Converter<S, S> {
   const NullConverter();
 
   @override
@@ -19,7 +23,7 @@ class NullConverter<S> extends Converter<S, S> {
   Sink<S> startChunkedConversion(Sink<S> sink) => sink;
 }
 
-final nullConverter = NullConverter<List<int>>();
+const nullConverter = NullConverter<List<int>>();
 
 extension PmpTilesByteData on ByteData {
   Clustered getClustered(int byteOffset) {
