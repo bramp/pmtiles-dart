@@ -6,24 +6,25 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:math' as math;
 
 import 'package:pmtiles/pmtiles.dart';
 import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
+import '../samples/headers.dart';
 import 'io_helpers.dart';
 import 'server_args.dart';
 
 final client = http.Client();
 late final String pmtilesUrl;
 late final String httpUrl;
-final sampleDir = path.join(Directory.current.path, 'samples');
 
 /// Use the pmtiles server to get the tile, as a source of comparision
 Future<http.Response> getReferenceTile(
-    String archive, int tildId, String ext) async {
-  final t = ZXY.fromTileId(tildId);
+    String archive, int tileId, String ext) async {
+  final t = ZXY.fromTileId(tileId);
 
   final basename = path.basenameWithoutExtension(archive);
   final response = await client.get(
@@ -127,23 +128,12 @@ Future<String> startHttpServer() async {
 // from a `spawnHybridUri` isolate, and the actual test in this file is run
 // in the browser.
 void main() async {
-  final samples = [
-    'samples/countries.pmtiles',
-    'samples/countries-raster.pmtiles',
-    'samples/countries-leaf.pmtiles',
-    'samples/countries-leafs.pmtiles',
-    'samples/trails.pmtiles',
-    'samples/protomaps(vector)ODbL_firenze.pmtiles',
-    'samples/stamen_toner(raster)CC-BY+ODbL_z3.pmtiles',
-    'samples/usgs-mt-whitney-8-15-webp-512.pmtiles',
-  ];
-
   setUpAll(() async {
     pmtilesUrl = await startPmtilesServer();
     httpUrl = await startHttpServer();
   });
 
-  for (final api in ['http', 'file']) {
+  for (final api in ['file', 'http']) {
     /// Returns the ReadAt for specific sample file. This may differ depending
     /// on test/environment.
     ReadAt readAtForSample(String sample) {
@@ -155,14 +145,15 @@ void main() async {
             Uri.parse('$httpUrl/$p'),
           );
         case 'file':
-          return FileAt(File(sample));
+          final p = path.join('samples', sample);
+          return FileAt(File(p));
         default:
           throw Exception('Unknown API: $api');
       }
     }
 
     group('PmTilesArchive (via $api)', () {
-      for (final sample in samples) {
+      for (final sample in sampleHeaders.keys) {
         test('$sample metadata()', () async {
           final expected = await getReferenceMetadata(sample);
 
@@ -184,24 +175,83 @@ void main() async {
           try {
             final ext = archive.header.tileType.ext();
 
-            // TODO Maybe set this to min/max location
-            for (var id = 0; id < 5400; id++) {
-              final response = await getReferenceTile(sample, id, ext);
-              final expected = response.bodyBytes;
+            // Set the min/max tile to test for.
+            final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
+            final max = ZXY(archive.header.maxZoom, 0, 0).toTileId();
 
+            // Some files have a lot of tiles, so we'll only test a subset.
+            int increments = math.max((max - min) ~/ 5003, 1);
+
+            for (int id = min; id < max; id += increments) {
+              final reference = await getReferenceTile(sample, id, ext);
+              final expected = reference.bodyBytes;
+
+              final tile = await archive.tile(id);
               try {
-                final tile = await archive.tile(id);
                 final actual = Uint8List.fromList(tile.bytes());
 
                 // If we managed to call tiles.tile, then the server should have also
                 // returned a 200 OK
-                expect(200, equals(response.statusCode), reason: 'Tile $id');
-                expect(actual, equals(expected), reason: 'Tile $id');
+                expect(200, equals(reference.statusCode), reason: 'Tile: $id');
+                expect(actual, equals(expected), reason: 'Tile: $id');
               } on TileNotFoundException {
                 // If we throw a TileNotFoundException we should expect the server
-                // to return a 404 Not Found, or a 204 No Content.
-                expect(204, equals(response.statusCode), reason: 'Tile $id');
+                // to return 204 No Content.
+
+                // `pmtiles serve` returns 204 if the tile isn't found in the
+                // archive, except when the zoom is too deep, which is returns 404.
+                // It also returns 404 if the archive isn't found.
+                expect(204, equals(reference.statusCode),
+                    reason:
+                        'Tile: $id, Request: ${reference.request?.url.toString()}');
               }
+            }
+          } finally {
+            await archive.close();
+          }
+        });
+
+        test('$sample tile(..) out of zoom range', () async {
+          final f = readAtForSample(sample);
+          final archive = await PmTilesArchive.fromReadAt(f);
+
+          try {
+            final ext = archive.header.tileType.ext();
+
+            // Set the min/max tile to test for.
+            final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
+            final max = ZXY(archive.header.maxZoom + 1, 0, 0).toTileId();
+
+            if (archive.header.minZoom > 0) {
+              final id = min - 1;
+              final reference = await getReferenceTile(sample, id, ext);
+
+              // Out of zoom range should return 404 by the server
+              expect(404, equals(reference.statusCode),
+                  reason:
+                      'Tile: $id, Request: ${reference.request?.url.toString()}');
+
+              final tile = await archive.tile(id);
+              expect(() => tile.compressedBytes(),
+                  throwsA(isA<TileNotFoundException>()),
+                  reason:
+                      'Tile: $id, Request: ${reference.request?.url.toString()}');
+            }
+
+            if (archive.header.maxZoom <= ZXY.maxAllowedZoom) {
+              final id = max;
+              final reference = await getReferenceTile(sample, id, ext);
+
+              // Out of zoom range should return 404 by the server
+              expect(404, equals(reference.statusCode),
+                  reason:
+                      'Tile: $id, Request: ${reference.request?.url.toString()}');
+
+              final tile = await archive.tile(id);
+              expect(() => tile.compressedBytes(),
+                  throwsA(isA<TileNotFoundException>()),
+                  reason:
+                      'Tile: $id, Request: ${reference.request?.url.toString()}');
             }
           } finally {
             await archive.close();
@@ -216,9 +266,16 @@ void main() async {
             final ext = archive.header.tileType.ext();
             const groupSize = 16 * 16;
 
-            // TODO Maybe set this to min/max location
-            for (var id = 0; id < 5400; id += groupSize) {
-              final wanted = List.generate(groupSize, (index) => id + index);
+            // Set the min/max tile to test for.
+            final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
+            final max = ZXY(archive.header.maxZoom + 1, 0, 0).toTileId();
+
+            int increments = math.max((max - min) ~/ 5003, 1);
+
+            for (var id = min; id < max; id += (groupSize * increments)) {
+              final remaining = max - id;
+              final wanted = List.generate(
+                  math.min(groupSize, remaining), (index) => id + index);
 
               // Fetch and wait for all the tiles in one large go
               final tiles = await archive.tiles(wanted).toList();
@@ -231,20 +288,23 @@ void main() async {
                       'Failed to find Tile $id in list of fetched tiles $tiles');
                 });
 
-                final response = await getReferenceTile(sample, id, ext);
-                final expected = response.bodyBytes;
+                final reference = await getReferenceTile(sample, id, ext);
+                final expected = reference.bodyBytes;
 
                 try {
                   final actual = Uint8List.fromList(tile.bytes());
 
                   // If we managed to call tiles.tiles, then the server should
                   // have also returned a 200 OK
-                  expect(200, equals(response.statusCode), reason: 'Tile $id');
-                  expect(actual, equals(expected), reason: 'Tile $id');
+                  expect(200, equals(reference.statusCode),
+                      reason: 'Tile: $id');
+                  expect(actual, equals(expected), reason: 'Tile: $id');
                 } on TileNotFoundException {
                   // If we throw a TileNotFoundException we should expect the server
                   // to return a 404 Not Found, or a 204 No Content.
-                  expect(204, equals(response.statusCode), reason: 'Tile $id');
+                  expect(204, equals(reference.statusCode),
+                      reason:
+                          'Tile: $id, Request: ${reference.request?.url.toString()}');
                 }
               }
             }
@@ -264,19 +324,35 @@ void main() async {
             f.reset();
 
             const groupSize = 16 * 16;
-            final wanted = List.generate(groupSize, (index) => index);
+            final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
+            final wanted = List.generate(groupSize, (index) => min + index);
 
             // Fetch the first groupSize tiles.
             final tiles = await archive.tiles(wanted).toList();
             expect(tiles.length, wanted.length);
 
+            /// In some of the files there is a edge case where none are the
+            /// tiles are found, so we remove them.
+            tiles.removeWhere((tile) {
+              try {
+                tile.compressedBytes();
+                return false;
+              } on TileNotFoundException {
+                return true;
+              }
+            });
+            final expectedTileReads = tiles.isEmpty ? 0 : 1;
+
             // Check we made the right number of requests.
             if (archive.header.leafDirectoriesLength > 0) {
-              // Expect 1 tile + 1 or 2 leaf read (in addition to the header read above).
-              expect(f.requests, inInclusiveRange(2, 3));
+              expect(
+                  f.requests,
+                  inInclusiveRange(
+                      expectedTileReads + 1, expectedTileReads + 2),
+                  reason: 'Expect $expectedTileReads tile + 1-2 leaf read');
             } else {
-              // Expect 1 tile read (in addition to the header read above).
-              expect(f.requests, equals(1));
+              expect(f.requests, expectedTileReads,
+                  reason: 'Expect $expectedTileReads tile read');
             }
             f.reset();
           } finally {

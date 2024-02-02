@@ -10,6 +10,13 @@ class ZXY {
   final int x;
   final int y;
 
+  /// The maximum supported zoom level.
+  ///
+  /// Only allow up to (and including) 26, so that this library works in places
+  /// where doubles are used to represent ints, such as JavaScript.
+  ///    tileID = 2^53 + 1 = ZXY(27, 67108861, 67108863)
+  static const maxAllowedZoom = 26;
+
   const ZXY(this.z, this.x, this.y)
       : assert(z >= 0 && z < 27),
         assert(x >= 0 && x < (1 << z)),
@@ -17,11 +24,6 @@ class ZXY {
 
   /// Maps a tileId to the appropriate Zoom, X and Y coordinate.
   factory ZXY.fromTileId(int tileId) {
-    const maxAllowedZoom = 26;
-    // Only allow up to 27, so that this library works in places where
-    // doubles are used to represent ints, such as JavaScript.
-    // tildID = 2^53 + 1 = ZXY(27, 67108861, 67108863)
-
     // We search each zoom level finding which one the tile belongs to
     // Then we use a Hilbert curve to map the ID into the X and Y coordinates.
     //

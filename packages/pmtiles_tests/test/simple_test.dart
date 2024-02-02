@@ -74,11 +74,11 @@ const fixtures = {
 // Simple smoke tests, which don't use File or HTTP apis.
 void main() async {
   final expected = <String, Matcher>{
-    'empty.pmtiles': throwsA(TypeMatcher<CorruptArchiveException>()),
-    'invalid.pmtiles': throwsA(TypeMatcher<CorruptArchiveException>()),
-    'invalid_v4.pmtiles': throwsA(TypeMatcher<UnsupportedError>()),
-    'test_fixture_1.pmtiles': throwsA(TypeMatcher<UnsupportedError>()),
-    'test_fixture_2.pmtiles': throwsA(TypeMatcher<UnsupportedError>()),
+    'empty.pmtiles': throwsA(isA<CorruptArchiveException>()),
+    'invalid.pmtiles': throwsA(isA<CorruptArchiveException>()),
+    'invalid_v4.pmtiles': throwsA(isA<UnsupportedError>()),
+    'test_fixture_1.pmtiles': throwsA(isA<UnsupportedError>()),
+    'test_fixture_2.pmtiles': throwsA(isA<UnsupportedError>()),
   };
 
   for (final e in fixtures.entries) {

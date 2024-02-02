@@ -6,8 +6,9 @@ import 'package:meta/meta.dart';
 
 export 'src/archive.dart';
 export 'src/exceptions.dart';
-export 'src/types.dart';
+export 'src/header.dart';
 export 'src/tile.dart';
+export 'src/types.dart';
 export 'src/zxy.dart';
 
 @visibleForTesting

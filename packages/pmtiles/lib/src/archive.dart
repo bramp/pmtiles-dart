@@ -86,7 +86,10 @@ class PmTilesArchive {
     return null;
   }
 
-  /// Return the tile data for a single tile [tileId].
+  /// Returns a handle to a single tile [tileId].
+  ///
+  /// The returned tile may not exist, or be corrupt. This will be discovered
+  /// when Tile.bytes() or Tile.compressedBytes() is called.
   Future<Tile> tile(int tileId) async {
     final entry = await lookup(tileId);
     if (entry == null || entry.isLeaf) {
@@ -186,7 +189,7 @@ class PmTilesArchive {
     );
   }
 
-  /// Returns a stream of tiles for the given [tildIds]. The tiles my be return
+  /// Returns a stream of tiles for the given [tileIds]. The tiles my be return
   /// out of order. This tries to batch the fetching of tiles together to reduce
   /// the calls to the underlying archive.
   Stream<Tile> tiles(List<int> tileIds) {
@@ -205,21 +208,21 @@ class PmTilesArchive {
           (key1, key2) => key1.offset.compareTo(key2.offset),
         );
         for (var i = 0; i < tileIds.length; i++) {
-          final tildId = tileIds[i];
+          final tileId = tileIds[i];
           final entry = entries[i];
 
           if (entry == null) {
             controller.add(Tile(
-              tildId,
-              exception: TileNotFoundException(tildId),
+              tileId,
+              exception: TileNotFoundException(tileId),
             ));
             continue;
           }
 
           if (entriesMap.containsKey(entry)) {
-            entriesMap[entry]!.add(tildId);
+            entriesMap[entry]!.add(tileId);
           } else {
-            entriesMap[entry] = [tildId];
+            entriesMap[entry] = [tileId];
           }
         }
 
