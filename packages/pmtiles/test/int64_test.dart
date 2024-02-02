@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:pmtiles/src/int64.dart';
@@ -355,7 +356,7 @@ void main() {
   ];
 
   for (final endian in [Endian.big, Endian.little]) {
-    test('getFixNumUint64 (<=2^53, $endian)', () {
+    test('getFixNumUint64 ($endian) <=2^53', () {
       for (final t in testcases) {
         final bd = ByteData(8);
         bd.buffer
@@ -367,7 +368,7 @@ void main() {
     });
 
     // On native platforms this should work fine.
-    test('getFixNumUint64 (>2^53, $endian)', () {
+    test('getFixNumUint64 ($endian) > 2^53', () {
       for (final t in bigTestcases) {
         final bd = ByteData(8);
         bd.buffer
@@ -379,7 +380,7 @@ void main() {
     }, testOn: "!js");
 
     // On JS Platforms this should throw exceptions
-    test('getFixNumUint64 (>2^53, $endian)', () {
+    test('getFixNumUint64 ($endian) > 2^53', () {
       for (final t in bigTestcases) {
         final bd = ByteData(8);
         bd.buffer
@@ -390,5 +391,29 @@ void main() {
             reason: t.$1);
       }
     }, testOn: "js");
+
+    test('getFixNumUint64 ($endian) == getUint64($endian)', () {
+      for (final t in (testcases + bigTestcases)) {
+        final bd = ByteData(8);
+        bd.buffer
+            .asUint8List()
+            .setAll(0, endian == Endian.big ? t.$3 : t.$3.reversed);
+
+        expect(bd.getSafeUint64(0, endian).toString(),
+            bd.getUint64(0, endian).toString(),
+            reason: t.$1);
+      }
+
+      // Test with random values
+      final r = Random();
+      for (int i = 0; i < 1000000; i++) {
+        final bd = ByteData(8);
+        bd.setInt32(0, r.nextInt(1 << 32));
+        bd.setInt32(4, r.nextInt(1 << 32));
+
+        expect(bd.getSafeUint64(0, endian).toString(),
+            bd.getUint64(0, endian).toString());
+      }
+    }, testOn: "!js");
   }
 }
