@@ -89,19 +89,24 @@ If the library is used in an UnsupportedError exception will be thrown.
 
 Use `melos bootstrap` to install dependencies and link packages together.
 
-The package is broken up into `pmtiles`, `pmtiles_cli` and `pmtiles_tests`. The
-`pmtiles` package contains the core logic and is published to [pub.dev](https://pub.dev/packages/pmtiles).
-`pmtiles_cli` is a simple test command line.
+The package is broken up into three:
 
-Finally, `pmtiles_tests` is a collection of integration tests, including a suite
-of sample files. This is kept seperate to `pmtiles` so the library remains
-small.
+* `pmtiles` package contains the core logic and is published to
+  [pub.dev](https://pub.dev/packages/pmtiles).
 
-To run all the tests on the dartvm, use `melos test`.  Additionally the tests
-can be run via [Node.js](https://nodejs.org/) and [Chrome](https://www.google.com/chrome/)
-`melos test:node` and `melos test:chrome` respectively. This ensures the library
-works when compiled under dart2js.
+* `pmtiles_cli` is a simple command line tool, mainly used for testing. It is
+  not published to pub.dev.
 
+* `pmtiles_tests` is a collection of integration tests, including a suite of
+  sample files. This is kept seperate from `pmtiles` so the library remains
+  small.
+
+There are tests for native Dart VM, [Node.js](https://nodejs.org/) and
+[Chrome](https://www.google.com/chrome/). The integration tests require both the
+offical [pmtiles](https://github.com/protomaps/go-pmtiles) command line, as well
+as [http-server](https://www.npmjs.com/package/http-server) to be installed.
+
+Use `melos test` to run all these tests.
 
 ## Additional information
 
