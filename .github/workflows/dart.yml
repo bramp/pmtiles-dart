@@ -52,5 +52,11 @@ jobs:
 
       - run: pmtiles version
 
-      - name: Run tests
-        run: melos test
+      - name: Run tests (unit)
+        run: melos run test:dart --no-select
+
+      - name: Run tests (integration)
+        run: melos run test:flutter --no-select
+
+      - name: Run tests (chrome)
+        run: melos run test:chrome --no-select
