@@ -22,9 +22,6 @@ jobs:
 
       - run: flutter doctor -v
 
-      - name: Install dart dependencies
-        run: dart pub get
-
       - name: Install melos
         run: dart pub global activate melos
 
@@ -38,6 +35,10 @@ jobs:
       # Consider passing '--fatal-infos' for slightly stricter analysis.
       - name: Analyze project source
         run: dart analyze
+
+      # Needed for the integration tests
+      - name: Install http-server
+        run: npm install http-server -g
 
       # Needed for the integration tests
       - name: Install pmtiles
