@@ -79,6 +79,8 @@ void main() async {
     'invalid_v4.pmtiles': throwsA(isA<UnsupportedError>()),
     'test_fixture_1.pmtiles': throwsA(isA<UnsupportedError>()),
     'test_fixture_2.pmtiles': throwsA(isA<UnsupportedError>()),
+
+    // TODO Add a valid pmtiles file, that we can test against.
   };
 
   for (final e in fixtures.entries) {

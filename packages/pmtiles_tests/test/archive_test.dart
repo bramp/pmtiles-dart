@@ -362,7 +362,7 @@ void main() async {
       }
     }, onPlatform: {
       ...api == 'file'
-          ? {'browser': Skip('File API is not supported in browsers')}
+          ? {'js': Skip('File API is not supported in dart2js')}
           : {},
     }, timeout: Timeout(Duration(seconds: 90)));
   }

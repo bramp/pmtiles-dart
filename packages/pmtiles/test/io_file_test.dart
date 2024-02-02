@@ -1,4 +1,4 @@
-@TestOn('!browser') // Exclude from browsers because they doesn't support [File]
+@TestOn('!js') // Exclude from js because they doesn't support [File]
 
 import 'dart:io';
 import 'dart:typed_data';
@@ -8,12 +8,12 @@ import 'package:test/test.dart';
 
 void main() {
   group('FileAt', () {
-    late Directory directory;
+    Directory? directory;
     late File tempFile;
 
     setUp(() async {
       directory = await Directory.systemTemp.createTemp();
-      tempFile = File("${directory.path}/test_file");
+      tempFile = File("${directory!.path}/test_file");
 
       final f = await tempFile.create();
       await f.writeAsBytes(
@@ -22,7 +22,9 @@ void main() {
     });
 
     tearDown(() async {
-      await directory.delete(recursive: true);
+      if (directory != null) {
+        await directory!.delete(recursive: true);
+      }
     });
 
     final tests = <(int, int), List<int>>{

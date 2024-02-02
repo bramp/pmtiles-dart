@@ -4,16 +4,16 @@ import 'io.dart';
 
 class FileAt implements ReadAt {
   FileAt(Object file) {
-    throw UnimplementedError('File APIs are not implemented on the web');
+    throw UnsupportedError('File APIs are not supported for dart2js');
   }
 
   @override
   Future<ByteStream> readAt(final int offset, final int length) async {
-    throw UnimplementedError('File APIs are not implemented on the web');
+    throw UnsupportedError('File APIs are not supported for dart2js');
   }
 
   @override
   Future<void> close() {
-    throw UnimplementedError('File APIs are not implemented on the web');
+    throw UnsupportedError('File APIs are not supported for dart2js');
   }
 }

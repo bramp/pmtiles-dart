@@ -1,5 +1,5 @@
 // Exclude on browsers because it doesn't support the filesystem.
-@TestOn('!browser')
+@TestOn('!js')
 
 import 'package:pmtiles/pmtiles.dart';
 

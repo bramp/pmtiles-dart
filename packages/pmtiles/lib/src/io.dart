@@ -2,12 +2,10 @@ import 'dart:collection';
 import 'dart:math' as math;
 import 'package:http/http.dart';
 
-// Browsers don't support the File APIs
-export 'io_file.dart' if (dart.library.browser) 'io_file_fake.dart';
+// JS don't support the File APIs
+export 'io_file_fake.dart' if (dart.library.io) 'io_file.dart';
 
-// Node doesn't support the HTTP APIs
-// https://github.com/dart-lang/http/issues/1126
-export 'io_http.dart' if (dart.library.node) 'io_http_fake.dart';
+export 'io_http.dart';
 
 /// Simple interface so we can abstract reading from Files, or Http.
 abstract interface class ReadAt {

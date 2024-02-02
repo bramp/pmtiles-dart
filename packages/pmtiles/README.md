@@ -70,6 +70,21 @@ Future<int> main() async {
 
 ```
 
+## Support Matrix
+
+Some effort has been made to ensure this library works correctly on
+the native Dart VM, as well as when dart2js is used to compiled to
+JavaScript (e.g. for use with Node.js or Chrome). The following table
+shows the support matrix.
+
+| Feature | Dart VM | Node.js | Browsers (e.g Chrome) |
+| ------: | :-----: | :-----: | :-------------------: |
+|         | Native  | dart2js |        dart2js        |
+|    File |   Yes   |   No    |          No           |
+|    HTTP |   Yes   |   No    |          Yes          |
+
+If the library is used in an UnsupportedError exception will be thrown.
+
 ## Development
 
 Use `melos bootstrap` to install dependencies and link packages together.
