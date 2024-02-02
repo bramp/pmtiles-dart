@@ -355,43 +355,39 @@ void main() {
   ];
 
   for (final endian in [Endian.big, Endian.little]) {
-    group('getFixNumUint64 (<=2^53, $endian)', () {
+    test('getFixNumUint64 (<=2^53, $endian)', () {
       for (final t in testcases) {
-        test(t.$1, () {
-          final bd = ByteData(8);
-          bd.buffer
-              .asUint8List()
-              .setAll(0, endian == Endian.big ? t.$3 : t.$3.reversed);
+        final bd = ByteData(8);
+        bd.buffer
+            .asUint8List()
+            .setAll(0, endian == Endian.big ? t.$3 : t.$3.reversed);
 
-          expect(bd.getSafeUint64(0, endian).toString(), t.$2, reason: t.$1);
-        });
+        expect(bd.getSafeUint64(0, endian).toString(), t.$2, reason: t.$1);
       }
     });
 
-    group('getFixNumUint64 (>2^53, $endian)', () {
+    // On native platforms this should work fine.
+    test('getFixNumUint64 (>2^53, $endian)', () {
       for (final t in bigTestcases) {
-        test(t.$1, () {
-          final bd = ByteData(8);
-          bd.buffer
-              .asUint8List()
-              .setAll(0, endian == Endian.big ? t.$3 : t.$3.reversed);
+        final bd = ByteData(8);
+        bd.buffer
+            .asUint8List()
+            .setAll(0, endian == Endian.big ? t.$3 : t.$3.reversed);
 
-          expect(bd.getSafeUint64(0, endian).toString(), t.$2, reason: t.$1);
-        });
+        expect(bd.getSafeUint64(0, endian).toString(), t.$2, reason: t.$1);
       }
     }, testOn: "!js");
 
-    group('getFixNumUint64 (>2^53, $endian)', () {
+    // On JS Platforms this should throw exceptions
+    test('getFixNumUint64 (>2^53, $endian)', () {
       for (final t in bigTestcases) {
-        test(t.$1, () {
-          final bd = ByteData(8);
-          bd.buffer
-              .asUint8List()
-              .setAll(0, endian == Endian.big ? t.$3 : t.$3.reversed);
+        final bd = ByteData(8);
+        bd.buffer
+            .asUint8List()
+            .setAll(0, endian == Endian.big ? t.$3 : t.$3.reversed);
 
-          expect(() => bd.getSafeUint64(0, endian), throwsUnsupportedError,
-              reason: t.$1);
-        });
+        expect(() => bd.getSafeUint64(0, endian), throwsUnsupportedError,
+            reason: t.$1);
       }
     }, testOn: "js");
   }
