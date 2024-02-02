@@ -270,7 +270,7 @@ void main() async {
             final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
             final max = ZXY(archive.header.maxZoom + 1, 0, 0).toTileId();
 
-            int increments = math.max((max - min) ~/ 5003, 1);
+            int increments = math.max((max - min) ~/ 997, 1);
 
             for (var id = min; id < max; id += (groupSize * increments)) {
               final remaining = max - id;
