@@ -6,6 +6,9 @@ version: 2.0.0
 # publish_to: https://pub.dev
 repository: https://github.com/bramp/pmtiles-dart
 
+funding:
+  - https://www.buymeacoffee.com/bramp
+
 environment:
   sdk: ^3.11.3
 
