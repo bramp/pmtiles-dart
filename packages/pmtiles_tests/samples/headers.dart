@@ -51,7 +51,7 @@ const sampleHeaders = <String, String>{
     centerZoom: 0,
     centerPosition: LatLng(latitude:7.0137, longitude:0.0),
     ''',
-  'countries-raster.pmtiles': ''' 
+  'countries-raster.pmtiles': '''
     magic: PMTiles,
     version: 3,
     rootDirectoryOffset: 127,
