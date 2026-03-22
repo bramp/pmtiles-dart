@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:http/http.dart';
 import 'package:pmtiles/pmtiles.dart';
 import 'package:test/test.dart';
@@ -60,14 +62,41 @@ Future<String> startPmtilesServer() async {
     ).toJson(),
   );
 
+  final output = <String>[];
+  final urlCompleter = Completer<String>();
+
+  channel.stream.listen(
+    (dynamic line) {
+      final s = line as String;
+      output.add(s);
+      if (!urlCompleter.isCompleted) {
+        urlCompleter.complete(s);
+      }
+    },
+    onDone: () {
+      if (!urlCompleter.isCompleted) {
+        urlCompleter.completeError(
+          Exception(
+            'pmtiles stream closed without output.\n${output.join('\n')}',
+          ),
+        );
+      }
+    },
+  );
+
   addTearDown(() async {
     // Tell the pmtiles server to shutdown and wait for the sink to be closed.
     channel.sink.add('tearDownAll');
-    await channel.sink.done;
+    try {
+      await channel.sink.done.timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      print('pmtiles tearDown timed out. Output:\n${output.join('\n')}');
+      rethrow;
+    }
   });
 
   // Get the url pmtiles server is running on.
-  return pmtilesServingToUrl((await channel.stream.first) as String);
+  return pmtilesServingToUrl(await urlCompleter.future);
 }
 
 /// Starts a plain http server, returning the URL its running on.
@@ -92,17 +121,39 @@ Future<String> startHttpServer() async {
     ).toJson(),
   );
 
+  final output = <String>[];
+  final urlCompleter = Completer<String>();
+
+  channel.stream.listen(
+    (dynamic line) {
+      final s = line as String;
+      output.add(s);
+      if (!urlCompleter.isCompleted && s.contains('http://127.0.0.1:')) {
+        urlCompleter.complete(s.trim());
+      }
+    },
+    onDone: () {
+      if (!urlCompleter.isCompleted) {
+        urlCompleter.completeError(
+          Exception(
+            'http-server stream closed without URL.\n${output.join('\n')}',
+          ),
+        );
+      }
+    },
+  );
+
   addTearDown(() async {
     // Tell the server to shutdown and wait for the sink to be closed.
     channel.sink.add('tearDownAll');
-    await channel.sink.done;
+    try {
+      await channel.sink.done.timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      print('http-server tearDown timed out. Output:\n${output.join('\n')}');
+      rethrow;
+    }
   });
 
-  final url = await channel.stream.firstWhere(
-    (dynamic line) => (line as String).contains('http://127.0.0.1:'),
-    orElse: () => throw Exception('Failed to find available line.'),
-  );
-
   // Get the url server is running on.
-  return (url as String).trim();
+  return urlCompleter.future;
 }
