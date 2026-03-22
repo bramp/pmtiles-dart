@@ -76,8 +76,9 @@ Future<String> startHttpServer() async {
     'server.dart',
     stayAlive: true,
     message: const ServerArgs(
-      executable: 'http-server',
+      executable: 'npx',
       arguments: [
+        'http-server',
         '.',
 
         // Allow requests from any origin. This allows the `chrome` browser
@@ -86,7 +87,7 @@ Future<String> startHttpServer() async {
       ],
       workingDirectory: 'samples',
 
-      // Needed for `env` in http-server to find `node`.
+      // Needed for `npx` to find `node`.
       includeParentEnvironment: true,
     ).toJson(),
   );

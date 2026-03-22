@@ -29,8 +29,8 @@ Future<int> getUnusedPort([InternetAddress? address]) {
 ///       'server.dart',
 ///       stayAlive: true,
 ///       message: ServerArgs(
-///         executable: 'http-server',
-///         arguments: ['.'],
+///         executable: 'npx',
+///         arguments: ['http-server', '.'],
 ///         workingDirectory: 'samples',
 ///       ).toJson(),
 ///     );

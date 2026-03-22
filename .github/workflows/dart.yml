@@ -40,7 +40,7 @@ jobs:
 
       # Needed for the integration tests
       - name: Install http-server
-        run: npm install http-server -g
+        run: npm install http-server
 
       # Needed for the integration tests
       - name: Install pmtiles
