@@ -1,12 +1,13 @@
 # To test this workflow, you can use the following command:
 # act -j build -s GITHUB_TOKEN="$(gh auth token)" --container-architecture linux/amd64
-name: Dart
+name: Test
 
 on:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  workflow_call:
 
 jobs:
   build:
