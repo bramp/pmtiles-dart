@@ -87,26 +87,67 @@ If the library is used in an UnsupportedError exception will be thrown.
 
 ## Development
 
-Use `melos bootstrap` to install dependencies and link packages together.
+This project uses [Dart workspaces](https://dart.dev/tools/pub/workspaces)
+and a [Makefile](Makefile) for common tasks.
 
-The package is broken up into three:
+### Setup
 
-* `pmtiles` package contains the core logic and is published to
+```bash
+dart pub get           # Install dependencies for all packages
+npm install http-server # Needed for integration tests
+```
+
+The integration tests also require the official
+[pmtiles](https://github.com/protomaps/go-pmtiles) CLI to be installed.
+
+### Common commands
+
+| Command              | Description                                   |
+| -------------------- | --------------------------------------------- |
+| `make all`           | Format, analyze, and run all tests            |
+| `make format`        | Format all Dart code                          |
+| `make analyze`       | Run the Dart analyzer across all packages     |
+| `make test`          | Run all tests (dart, flutter, node, chrome)   |
+| `make test-dart`     | Run native Dart VM tests                      |
+| `make test-flutter`  | Run Flutter tests                             |
+| `make test-node`     | Run Node.js tests (dart2js)                   |
+| `make test-chrome`   | Run Chrome tests (dart2js)                    |
+| `make fix`           | Apply auto-fixes                              |
+| `make clean`         | Delete build artifacts                        |
+
+### Packages
+
+The repository is broken up into three packages:
+
+* `pmtiles` — the core library, published to
   [pub.dev](https://pub.dev/packages/pmtiles).
 
-* `pmtiles_cli` is a simple command line tool, mainly used for testing. It is
-  not published to pub.dev.
+* `pmtiles_cli` — a simple command line tool, mainly used for testing.
+  Not published to pub.dev.
 
-* `pmtiles_tests` is a collection of integration tests, including a suite of
-  sample files. This is kept seperate from `pmtiles` so the library remains
-  small.
+* `pmtiles_tests` — integration tests and sample files. Kept separate
+  from `pmtiles` so the published library remains small.
 
-There are tests for native Dart VM, [Node.js](https://nodejs.org/) and
-[Chrome](https://www.google.com/chrome/). The integration tests require both the
-offical [pmtiles](https://github.com/protomaps/go-pmtiles) command line, as well
-as [http-server](https://www.npmjs.com/package/http-server) to be installed.
+### Publishing
 
-Use `melos test` to run all these tests.
+To publish a new version to [pub.dev](https://pub.dev/packages/pmtiles):
+
+1. Update the version in [packages/pmtiles/pubspec.yaml](packages/pmtiles/pubspec.yaml).
+2. Update [packages/pmtiles/CHANGELOG.md](packages/pmtiles/CHANGELOG.md).
+3. Verify the package is ready to publish:
+   ```bash
+   cd packages/pmtiles && dart pub publish --dry-run
+   ```
+4. Commit and push to `main`.
+5. Tag the commit and push the tag:
+   ```bash
+   git tag pmtiles-v<version>
+   git push origin pmtiles-v<version>
+   ```
+
+Pushing a tag matching `pmtiles-v*` triggers the
+[publish workflow](.github/workflows/publish.yml), which automatically
+publishes to pub.dev via OIDC.
 
 ## Additional information
 
