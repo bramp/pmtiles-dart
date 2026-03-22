@@ -15,26 +15,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # - uses: dart-lang/setup-dart@v1
+      - name: Cache default Flutter artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache/
+            /opt/hostedtoolcache/flutter/
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.yaml') }}
+
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
       - run: flutter doctor -v
 
-      - name: Install melos
-        run: dart pub global activate melos
+      - name: Install dependencies
+        run: dart pub get
 
-      - name: Bootstrap melos
-        run: melos bootstrap
+      - name: Verify formatting
+        run: make format
 
-      # Uncomment this step to verify the use of 'dart format' on each commit.
-      # - name: Verify formatting
-      #   run: dart format --output=none --set-exit-if-changed .
-
-      # Consider passing '--fatal-infos' for slightly stricter analysis.
       - name: Analyze project source
-        run: dart analyze
+        run: make analyze
 
       # Needed for the integration tests
       - name: Install http-server
@@ -52,11 +54,14 @@ jobs:
 
       - run: pmtiles version
 
-      - name: Run tests (unit)
-        run: melos run test:dart --no-select
+      - name: Run tests (dart)
+        run: make test-dart
 
-      - name: Run tests (integration)
-        run: melos run test:flutter --no-select
+      - name: Run tests (flutter)
+        run: make test-flutter
+
+      - name: Run tests (node)
+        run: make test-node
 
       - name: Run tests (chrome)
-        run: melos run test:chrome --no-select
+        run: make test-chrome

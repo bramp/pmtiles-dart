@@ -21,17 +21,18 @@ Future<int> main() async {
     // The metadata is a embedded JSON object, as described here:
     // https://github.com/protomaps/PMTiles/blob/main/spec/v3/spec.md#5-json-metadata
     print('Metadata:');
-    final prettyJson = JsonEncoder.withIndent('  ') // for clarity pretty print
-        .convert(await archive.metadata);
+    final prettyJson =
+        const JsonEncoder.withIndent('  ') // for clarity pretty print
+            .convert(await archive.metadata);
     print(prettyJson);
 
     // # Tiles
     // To extract a tiles from the archive, you index them by a tile ID (which
     // can be converted to/from a ZXY coordinate).
-    final int tileId = ZXY(4, 3, 2).toTileId();
+    final tileId = const ZXY(4, 3, 2).toTileId();
 
     // To extract a single tile:
-    final Tile t = await archive.tile(tileId);
+    final t = await archive.tile(tileId);
     t.type; // e.g. mvt, png, jpg, etc.
 
     // The uncompressed bytes of the tile is available as a List<int>.

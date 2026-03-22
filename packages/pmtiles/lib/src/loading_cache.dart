@@ -4,8 +4,13 @@ import 'package:meta/meta.dart';
 import 'package:pool/pool.dart';
 
 /// A simple async safe loading cache, with request joining.
-// TODO Bound the size of the cache, perhaps a LRU.
+// TODO(bramp): Bound the size of the cache, perhaps a LRU.
 class LoadingCache<K, V> {
+  LoadingCache(
+    this._loader, {
+    required this.capacity,
+  }) : _pool = Pool(capacity, timeout: const Duration(seconds: 30));
+
   /// Max capacity in number of elements.
   final int capacity;
 
@@ -24,11 +29,6 @@ class LoadingCache<K, V> {
 
   final Future<V> Function(K) _loader;
 
-  LoadingCache(
-    this._loader, {
-    required this.capacity,
-  }) : _pool = Pool(capacity, timeout: Duration(seconds: 30));
-
   Future<V> get(K key) async {
     _lastRead[key] = _time++;
 
@@ -44,8 +44,10 @@ class LoadingCache<K, V> {
 
     // The cache has gotten too big. Let's clean it up.
     if (cache.length > capacity) {
-      int m = _lastRead.values.reduce(min);
-      K k = _lastRead.entries.firstWhere((element) => element.value == m).key;
+      final m = _lastRead.values.reduce(min);
+      final k = _lastRead.entries
+          .firstWhere((element) => element.value == m)
+          .key;
       _lastRead.remove(k);
       cache.remove(k);
     }

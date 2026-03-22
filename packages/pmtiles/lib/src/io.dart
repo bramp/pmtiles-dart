@@ -1,11 +1,11 @@
 import 'dart:collection';
 import 'dart:math' as math;
+
 import 'package:http/http.dart';
 
+export 'io_http.dart';
 export 'js/io_file.dart' //
     if (dart.library.io) 'native/io_file.dart'; // JS don't support the File APIs
-
-export 'io_http.dart';
 
 /// Simple interface so we can abstract reading from Files, or Http.
 abstract interface class ReadAt {
@@ -13,7 +13,7 @@ abstract interface class ReadAt {
   ///
   /// If offset+length is beyond the end of the file as many bytes as possible
   /// are returned.
-  // TODO Test the edge case behaviours.
+  // TODO(bramp): Test the edge case behaviours.
   Future<ByteStream> readAt(int offset, int length);
 
   /// Close any resources.
@@ -21,7 +21,7 @@ abstract interface class ReadAt {
 }
 
 /// An List<int> that is made up internally of a List of List<int>.
-// TODO Merge sublist and removeRange. Both are always called at the
+// TODO(bramp): Merge sublist and removeRange. Both are always called at the
 // same time, so we can do it in one pass.
 class CordBuffer {
   final _buffers = Queue<List<int>>();
@@ -38,7 +38,7 @@ class CordBuffer {
   }
 
   int get length {
-    return _buffers.fold(0, (int sum, List<int> buffer) {
+    return _buffers.fold(0, (sum, buffer) {
           return sum + buffer.length;
         }) -
         _offset;
@@ -49,14 +49,14 @@ class CordBuffer {
     assert(start <= end);
     assert(end <= length);
 
-    int remaining = end;
+    var remaining = end;
     while (remaining > 0 && _buffers.isNotEmpty) {
       final buffer = _buffers.first;
 
       // Remove the whole buffer
       if (remaining > (buffer.length - _offset)) {
         _buffers.removeFirst();
-        remaining -= (buffer.length - _offset);
+        remaining -= buffer.length - _offset;
         _offset = 0;
         continue;
       }
@@ -66,8 +66,10 @@ class CordBuffer {
       remaining -= remaining;
     }
 
-    assert(remaining == 0,
-        'Should have removed all the data, but $remaining remain');
+    assert(
+      remaining == 0,
+      'Should have removed all the data, but $remaining remain',
+    );
   }
 
   /// Returns a single sublist made up of a copy of the data in the buffers.
@@ -77,10 +79,10 @@ class CordBuffer {
     assert(end <= length);
 
     final result = List<int>.empty(growable: true);
-    int remaining = end - start;
+    var remaining = end - start;
 
     final b = _buffers.iterator;
-    int offset = _offset;
+    var offset = _offset;
 
     while (b.moveNext()) {
       final remainingInBuffer = b.current.length - offset;
@@ -96,10 +98,14 @@ class CordBuffer {
       }
     }
 
-    assert(remaining == 0,
-        'Should have removed all the data, but $remaining remain');
-    assert(result.length == end - start,
-        'Results length is wrong ${result.length} != ${end - start}');
+    assert(
+      remaining == 0,
+      'Should have removed all the data, but $remaining remain',
+    );
+    assert(
+      result.length == end - start,
+      'Results length is wrong ${result.length} != ${end - start}',
+    );
 
     return result;
   }
@@ -114,9 +120,8 @@ class CordBuffer {
 
 /// In memory implementation of ReadAt.
 class MemoryAt implements ReadAt {
-  final List<int> bytes;
-
   MemoryAt(this.bytes);
+  final List<int> bytes;
 
   @override
   Future<ByteStream> readAt(int offset, int length) async {

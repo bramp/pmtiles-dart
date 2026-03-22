@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
 
-import 'exceptions.dart';
-import 'types.dart';
+import 'package:pmtiles/src/exceptions.dart';
+import 'package:pmtiles/src/types.dart';
 
 /// Converting between types.
 ///

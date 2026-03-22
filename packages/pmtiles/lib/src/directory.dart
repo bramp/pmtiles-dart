@@ -1,15 +1,22 @@
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
-import 'exceptions.dart';
-import 'header.dart';
-import 'utils.dart';
-import 'zxy.dart';
+import 'package:pmtiles/src/exceptions.dart';
+import 'package:pmtiles/src/header.dart';
+import 'package:pmtiles/src/utils.dart';
+import 'package:pmtiles/src/zxy.dart';
 import 'package:protobuf/protobuf.dart';
 
 /// A single entry in the directory. Represents either:
 /// 1) One or more tiles that are identical.
 /// 2) A leaf entry.
 class Entry {
+  Entry({
+    this.tileId = 0,
+    this.runLength = 0,
+    this.offset = 0,
+    this.length = 0,
+  });
+
   /// The first tile ID in this run of tiles that are identical to this one.
   int tileId;
 
@@ -21,13 +28,6 @@ class Entry {
 
   /// The length of this tile within the Tile Data section.
   int length;
-
-  Entry({
-    this.tileId = 0,
-    this.runLength = 0,
-    this.offset = 0,
-    this.length = 0,
-  });
 
   ZXY get zxy => ZXY.fromTileId(tileId);
 
@@ -53,9 +53,8 @@ class Entry {
 
 @immutable
 class Directory {
+  const Directory({required this.entries});
   final List<Entry> entries;
-
-  Directory({required this.entries});
 
   static Directory from(List<int> uncompressed, {Header? header}) {
     final reader = CodedBufferReader(uncompressed);
@@ -64,12 +63,13 @@ class Directory {
 
     if (uncompressed.length < n * 4) {
       throw CorruptArchiveException(
-          'Directory is too short for $n entries, only ${uncompressed.length} bytes');
+        'Directory is too short for $n entries, only ${uncompressed.length} bytes',
+      );
     }
 
     final entries = <Entry>[];
 
-    int lastId = 0;
+    var lastId = 0;
     for (var i = 0; i < n; i++) {
       // Non-Clustered archives may allow negative numbers. But the spec
       // seems ambigious on how to handle this. For now, that's not supported
@@ -81,12 +81,12 @@ class Directory {
     }
 
     for (var i = 0; i < n; i++) {
-      final run = reader.readUint32().toInt();
+      final run = reader.readUint32();
       entries[i].runLength = run;
     }
 
     for (var i = 0; i < n; i++) {
-      entries[i].length = reader.readUint32().toInt();
+      entries[i].length = reader.readUint32();
     }
 
     for (var i = 0; i < n; i++) {
@@ -98,7 +98,8 @@ class Directory {
         if (i == 0) {
           // Should we treat this as starting at the beginning of the range?
           throw CorruptArchiveException(
-              'Invalid offset of zero in first entry of directory');
+            'Invalid offset of zero in first entry of directory',
+          );
         }
 
         final prevEntry = entries[i - 1];
@@ -111,11 +112,13 @@ class Directory {
       if (header != null) {
         // If we have the header, do extra checking.
         final entry = entries[i];
-        final maxOffset =
-            entry.isLeaf ? header.leafDirectoriesLength : header.tileDataLength;
+        final maxOffset = entry.isLeaf
+            ? header.leafDirectoriesLength
+            : header.tileDataLength;
         if (entry.offset + entry.length > maxOffset) {
           throw CorruptArchiveException(
-              'Offset:${entry.offset} len:${entry.length} points outside of allowed range $maxOffset');
+            'Offset:${entry.offset} len:${entry.length} points outside of allowed range $maxOffset',
+          );
         }
       }
     }

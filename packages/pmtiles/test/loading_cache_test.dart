@@ -5,7 +5,7 @@ void main() {
   group('LoadingCache', () {
     test('cache', () async {
       final cache = LoadingCache<int, int>(
-        (key) => Future.value(key),
+        Future.value,
         capacity: 8,
       );
 
@@ -46,7 +46,7 @@ void main() {
     });
 
     test('cache (lots of concurrent identical request)', () async {
-      int loads = 0;
+      var loads = 0;
 
       final cache = LoadingCache<int, int>(
         (key) {
@@ -58,8 +58,9 @@ void main() {
 
       expect(cache.length, equals(0));
 
-      final results =
-          await Future.wait(List.generate(1000, (index) => cache.get(1)));
+      final results = await Future.wait(
+        List.generate(1000, (index) => cache.get(1)),
+      );
       expect(results, everyElement(equals(1)));
       expect(cache.length, equals(1));
 
@@ -67,7 +68,7 @@ void main() {
     });
 
     test('cache (lots of concurrent different)', () async {
-      int loads = 0;
+      var loads = 0;
 
       final cache = LoadingCache<int, int>(
         (key) {
@@ -80,14 +81,15 @@ void main() {
       expect(cache.length, equals(0));
 
       const n = 1000;
-      final results =
-          await Future.wait(List.generate(n, (index) => cache.get(index)));
+      final results = await Future.wait(List.generate(n, cache.get));
       expect(results, List.generate(n, (index) => index));
       expect(cache.length, equals(8));
       expect(loads, equals(n));
 
-      expect(cache.cache.keys.toSet(),
-          List.generate(8, (index) => n - 8 + index).toSet());
+      expect(
+        cache.cache.keys.toSet(),
+        List.generate(8, (index) => n - 8 + index).toSet(),
+      );
     });
   });
 }

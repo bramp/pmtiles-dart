@@ -1,17 +1,16 @@
 // Exclude from node because it doesn't support the HTTP APIs needed to get
 // the reference tiles.
 @TestOn('!node')
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
-import 'package:pmtiles/pmtiles.dart';
-import 'package:test/test.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
+import 'package:pmtiles/pmtiles.dart';
+import 'package:test/test.dart';
 
 import '../samples/headers.dart';
 import 'io_helpers.dart';
@@ -22,7 +21,10 @@ late final String httpUrl;
 
 /// Use the pmtiles server to get the tile, as a source of comparision
 Future<http.Response> getReferenceTile(
-    String archive, int tileId, String ext) async {
+  String archive,
+  int tileId,
+  String ext,
+) async {
   final t = ZXY.fromTileId(tileId);
 
   final basename = path.basenameWithoutExtension(archive);
@@ -34,8 +36,9 @@ Future<http.Response> getReferenceTile(
 
 dynamic getReferenceMetadata(String sample) async {
   final basename = path.basenameWithoutExtension(sample);
-  final response =
-      await client.get(Uri.parse('$pmtilesUrl/$basename/metadata'));
+  final response = await client.get(
+    Uri.parse('$pmtilesUrl/$basename/metadata'),
+  );
 
   // JSON response is UTF-8, but by default Dart HTTP's library thinks all
   // responses are ISO-8859-1. So for our testing purposes we explictly
@@ -75,218 +78,252 @@ void main() async {
       }
     }
 
-    group('PmTilesArchive (via $api)', () {
-      for (final sample in sampleHeaders.keys) {
-        test('$sample metadata()', () async {
-          final expected = await getReferenceMetadata(sample);
+    group(
+      'PmTilesArchive (via $api)',
+      () {
+        for (final sample in sampleHeaders.keys) {
+          test('$sample metadata()', () async {
+            final expected = await getReferenceMetadata(sample);
 
-          final f = readAtForSample(sample);
-          final archive = await PmTilesArchive.fromReadAt(f);
+            final f = readAtForSample(sample);
+            final archive = await PmTilesArchive.fromReadAt(f);
 
-          try {
-            final actual = await archive.metadata;
-            expect(actual, equals(expected));
-          } finally {
-            await archive.close();
-          }
-        });
-
-        test('$sample tile(..)', () async {
-          final f = readAtForSample(sample);
-          final archive = await PmTilesArchive.fromReadAt(f);
-
-          try {
-            final ext = archive.header.tileType.ext();
-
-            // Set the min/max tile to test for.
-            final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
-            final max = ZXY(archive.header.maxZoom, 0, 0).toTileId();
-
-            // Some files have a lot of tiles, so we'll only test a subset.
-            int increments = math.max((max - min) ~/ 5003, 1);
-
-            for (int id = min; id < max; id += increments) {
-              final reference = await getReferenceTile(sample, id, ext);
-              final expected = reference.bodyBytes;
-
-              final tile = await archive.tile(id);
-              try {
-                final actual = Uint8List.fromList(tile.bytes());
-
-                // If we managed to call tiles.tile, then the server should have also
-                // returned a 200 OK
-                expect(200, equals(reference.statusCode), reason: 'Tile: $id');
-                expect(actual, equals(expected), reason: 'Tile: $id');
-              } on TileNotFoundException {
-                // If we throw a TileNotFoundException we should expect the server
-                // to return 204 No Content.
-
-                // `pmtiles serve` returns 204 if the tile isn't found in the
-                // archive, except when the zoom is too deep, which is returns 404.
-                // It also returns 404 if the archive isn't found.
-                expect(204, equals(reference.statusCode),
-                    reason:
-                        'Tile: $id, Request: ${reference.request?.url.toString()}');
-              }
+            try {
+              final actual = await archive.metadata;
+              expect(actual, equals(expected));
+            } finally {
+              await archive.close();
             }
-          } finally {
-            await archive.close();
-          }
-        });
+          });
 
-        test('$sample tile(..) out of zoom range', () async {
-          final f = readAtForSample(sample);
-          final archive = await PmTilesArchive.fromReadAt(f);
+          test('$sample tile(..)', () async {
+            final f = readAtForSample(sample);
+            final archive = await PmTilesArchive.fromReadAt(f);
 
-          try {
-            final ext = archive.header.tileType.ext();
+            try {
+              final ext = archive.header.tileType.ext();
 
-            // Set the min/max tile to test for.
-            final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
-            final max = ZXY(archive.header.maxZoom + 1, 0, 0).toTileId();
+              // Set the min/max tile to test for.
+              final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
+              final max = ZXY(archive.header.maxZoom, 0, 0).toTileId();
 
-            if (archive.header.minZoom > 0) {
-              final id = min - 1;
-              final reference = await getReferenceTile(sample, id, ext);
+              // Some files have a lot of tiles, so we'll only test a subset.
+              final int increments = math.max((max - min) ~/ 5003, 1);
 
-              // Out of zoom range should return 404 by the server
-              expect(404, equals(reference.statusCode),
-                  reason:
-                      'Tile: $id, Request: ${reference.request?.url.toString()}');
-
-              final tile = await archive.tile(id);
-              expect(() => tile.compressedBytes(),
-                  throwsA(isA<TileNotFoundException>()),
-                  reason:
-                      'Tile: $id, Request: ${reference.request?.url.toString()}');
-            }
-
-            if (archive.header.maxZoom <= ZXY.maxAllowedZoom) {
-              final id = max;
-              final reference = await getReferenceTile(sample, id, ext);
-
-              // Out of zoom range should return 404 by the server
-              expect(404, equals(reference.statusCode),
-                  reason:
-                      'Tile: $id, Request: ${reference.request?.url.toString()}');
-
-              final tile = await archive.tile(id);
-              expect(() => tile.compressedBytes(),
-                  throwsA(isA<TileNotFoundException>()),
-                  reason:
-                      'Tile: $id, Request: ${reference.request?.url.toString()}');
-            }
-          } finally {
-            await archive.close();
-          }
-        });
-
-        test('$sample tiles(..)', () async {
-          final f = readAtForSample(sample);
-          final archive = await PmTilesArchive.fromReadAt(f);
-
-          try {
-            final ext = archive.header.tileType.ext();
-            const groupSize = 16 * 16;
-
-            // Set the min/max tile to test for.
-            final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
-            final max = ZXY(archive.header.maxZoom + 1, 0, 0).toTileId();
-
-            int increments = math.max((max - min) ~/ 997, 1);
-
-            for (var id = min; id < max; id += (groupSize * increments)) {
-              final remaining = max - id;
-              final wanted = List.generate(
-                  math.min(groupSize, remaining), (index) => id + index);
-
-              // Fetch and wait for all the tiles in one large go
-              final tiles = await archive.tiles(wanted).toList();
-              expect(tiles.length, wanted.length);
-
-              // Now for each tile, check it matches what we expected
-              for (id in wanted) {
-                final tile = tiles.singleWhere((t) => t.id == id, orElse: () {
-                  fail(
-                      'Failed to find Tile $id in list of fetched tiles $tiles');
-                });
-
+              for (var id = min; id < max; id += increments) {
                 final reference = await getReferenceTile(sample, id, ext);
                 final expected = reference.bodyBytes;
 
+                final tile = await archive.tile(id);
                 try {
                   final actual = Uint8List.fromList(tile.bytes());
 
-                  // If we managed to call tiles.tiles, then the server should
-                  // have also returned a 200 OK
-                  expect(200, equals(reference.statusCode),
-                      reason: 'Tile: $id');
+                  // If we managed to call tiles.tile, then the server should have also
+                  // returned a 200 OK
+                  expect(
+                    200,
+                    equals(reference.statusCode),
+                    reason: 'Tile: $id',
+                  );
                   expect(actual, equals(expected), reason: 'Tile: $id');
                 } on TileNotFoundException {
                   // If we throw a TileNotFoundException we should expect the server
-                  // to return a 404 Not Found, or a 204 No Content.
-                  expect(204, equals(reference.statusCode),
-                      reason:
-                          'Tile: $id, Request: ${reference.request?.url.toString()}');
+                  // to return 204 No Content.
+
+                  // `pmtiles serve` returns 204 if the tile isn't found in the
+                  // archive, except when the zoom is too deep, which is returns 404.
+                  // It also returns 404 if the archive isn't found.
+                  expect(
+                    204,
+                    equals(reference.statusCode),
+                    reason: 'Tile: $id, Request: ${reference.request?.url}',
+                  );
                 }
               }
+            } finally {
+              await archive.close();
             }
-          } finally {
-            await archive.close();
-          }
-        });
+          });
 
-        test('$sample tiles(..) counting reads', () async {
-          final f = CountingReadAt(readAtForSample(sample));
-          final archive = await PmTilesArchive.fromReadAt(f);
+          test('$sample tile(..) out of zoom range', () async {
+            final f = readAtForSample(sample);
+            final archive = await PmTilesArchive.fromReadAt(f);
 
-          try {
-            // One request to read the header + root directory
-            expect(f.requests, equals(1));
-            expect(f.bytes, equals(16384));
-            f.reset();
+            try {
+              final ext = archive.header.tileType.ext();
 
-            const groupSize = 16 * 16;
-            final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
-            final wanted = List.generate(groupSize, (index) => min + index);
+              // Set the min/max tile to test for.
+              final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
+              final max = ZXY(archive.header.maxZoom + 1, 0, 0).toTileId();
 
-            // Fetch the first groupSize tiles.
-            final tiles = await archive.tiles(wanted).toList();
-            expect(tiles.length, wanted.length);
+              if (archive.header.minZoom > 0) {
+                final id = min - 1;
+                final reference = await getReferenceTile(sample, id, ext);
 
-            /// In some of the files there is a edge case where none are the
-            /// tiles are found, so we remove them.
-            tiles.removeWhere((tile) {
-              try {
-                tile.compressedBytes();
-                return false;
-              } on TileNotFoundException {
-                return true;
+                // Out of zoom range should return 404 by the server
+                expect(
+                  404,
+                  equals(reference.statusCode),
+                  reason: 'Tile: $id, Request: ${reference.request?.url}',
+                );
+
+                final tile = await archive.tile(id);
+                expect(
+                  tile.compressedBytes,
+                  throwsA(isA<TileNotFoundException>()),
+                  reason: 'Tile: $id, Request: ${reference.request?.url}',
+                );
               }
-            });
-            final expectedTileReads = tiles.isEmpty ? 0 : 1;
 
-            // Check we made the right number of requests.
-            if (archive.header.leafDirectoriesLength > 0) {
-              expect(
+              if (archive.header.maxZoom <= ZXY.maxAllowedZoom) {
+                final id = max;
+                final reference = await getReferenceTile(sample, id, ext);
+
+                // Out of zoom range should return 404 by the server
+                expect(
+                  404,
+                  equals(reference.statusCode),
+                  reason: 'Tile: $id, Request: ${reference.request?.url}',
+                );
+
+                final tile = await archive.tile(id);
+                expect(
+                  tile.compressedBytes,
+                  throwsA(isA<TileNotFoundException>()),
+                  reason: 'Tile: $id, Request: ${reference.request?.url}',
+                );
+              }
+            } finally {
+              await archive.close();
+            }
+          });
+
+          test('$sample tiles(..)', () async {
+            final f = readAtForSample(sample);
+            final archive = await PmTilesArchive.fromReadAt(f);
+
+            try {
+              final ext = archive.header.tileType.ext();
+              const groupSize = 16 * 16;
+
+              // Set the min/max tile to test for.
+              final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
+              final max = ZXY(archive.header.maxZoom + 1, 0, 0).toTileId();
+
+              final int increments = math.max((max - min) ~/ 997, 1);
+
+              for (var id = min; id < max; id += groupSize * increments) {
+                final remaining = max - id;
+                final wanted = List.generate(
+                  math.min(groupSize, remaining),
+                  (index) => id + index,
+                );
+
+                // Fetch and wait for all the tiles in one large go
+                final tiles = await archive.tiles(wanted).toList();
+                expect(tiles.length, wanted.length);
+
+                // Now for each tile, check it matches what we expected
+                for (id in wanted) {
+                  final tile = tiles.singleWhere(
+                    (t) => t.id == id,
+                    orElse: () {
+                      fail(
+                        'Failed to find Tile $id in list of fetched tiles $tiles',
+                      );
+                    },
+                  );
+
+                  final reference = await getReferenceTile(sample, id, ext);
+                  final expected = reference.bodyBytes;
+
+                  try {
+                    final actual = Uint8List.fromList(tile.bytes());
+
+                    // If we managed to call tiles.tiles, then the server should
+                    // have also returned a 200 OK
+                    expect(
+                      200,
+                      equals(reference.statusCode),
+                      reason: 'Tile: $id',
+                    );
+                    expect(actual, equals(expected), reason: 'Tile: $id');
+                  } on TileNotFoundException {
+                    // If we throw a TileNotFoundException we should expect the server
+                    // to return a 404 Not Found, or a 204 No Content.
+                    expect(
+                      204,
+                      equals(reference.statusCode),
+                      reason: 'Tile: $id, Request: ${reference.request?.url}',
+                    );
+                  }
+                }
+              }
+            } finally {
+              await archive.close();
+            }
+          });
+
+          test('$sample tiles(..) counting reads', () async {
+            final f = CountingReadAt(readAtForSample(sample));
+            final archive = await PmTilesArchive.fromReadAt(f);
+
+            try {
+              // One request to read the header + root directory
+              expect(f.requests, equals(1));
+              expect(f.bytes, equals(16384));
+              f.reset();
+
+              const groupSize = 16 * 16;
+              final min = ZXY(archive.header.minZoom, 0, 0).toTileId();
+              final wanted = List.generate(groupSize, (index) => min + index);
+
+              // Fetch the first groupSize tiles.
+              final tiles = await archive.tiles(wanted).toList();
+              expect(tiles.length, wanted.length);
+
+              /// In some of the files there is a edge case where none are the
+              /// tiles are found, so we remove them.
+              tiles.removeWhere((tile) {
+                try {
+                  tile.compressedBytes();
+                  return false;
+                } on TileNotFoundException {
+                  return true;
+                }
+              });
+              final expectedTileReads = tiles.isEmpty ? 0 : 1;
+
+              // Check we made the right number of requests.
+              if (archive.header.leafDirectoriesLength > 0) {
+                expect(
                   f.requests,
                   inInclusiveRange(
-                      expectedTileReads + 1, expectedTileReads + 2),
-                  reason: 'Expect $expectedTileReads tile + 1-2 leaf read');
-            } else {
-              expect(f.requests, expectedTileReads,
-                  reason: 'Expect $expectedTileReads tile read');
+                    expectedTileReads + 1,
+                    expectedTileReads + 2,
+                  ),
+                  reason: 'Expect $expectedTileReads tile + 1-2 leaf read',
+                );
+              } else {
+                expect(
+                  f.requests,
+                  expectedTileReads,
+                  reason: 'Expect $expectedTileReads tile read',
+                );
+              }
+              f.reset();
+            } finally {
+              await archive.close();
             }
-            f.reset();
-          } finally {
-            await archive.close();
-          }
-        });
-      }
-    }, onPlatform: {
-      ...api == 'file'
-          ? {'js': Skip('File API is not supported in dart2js')}
-          : {},
-    }, timeout: Timeout(Duration(seconds: 90)));
+          });
+        }
+      },
+      onPlatform: {
+        ...api == 'file'
+            ? {'js': const Skip('File API is not supported in dart2js')}
+            : {},
+      },
+      timeout: const Timeout(Duration(seconds: 90)),
+    );
   }
 }

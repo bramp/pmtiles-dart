@@ -6,11 +6,10 @@ import 'server_args.dart';
 
 /// Wrapper for a ReadAt, that counts how many requests/bytes are read.
 class CountingReadAt implements ReadAt {
+  CountingReadAt(this._inner);
   final ReadAt _inner;
   int requests = 0;
   int bytes = 0;
-
-  CountingReadAt(this._inner);
 
   @override
   Future<void> close() {
@@ -32,8 +31,9 @@ class CountingReadAt implements ReadAt {
 
 String pmtilesServingToUrl(String logline) {
   return logline.replaceAllMapped(
-      RegExp(r'(.* Serving .* port )(\d+)( .* interface )([\d.]+)(.*)'),
-      (Match m) => 'http://${m[4]}:${m[2]}');
+    RegExp(r'(.* Serving .* port )(\d+)( .* interface )([\d.]+)(.*)'),
+    (m) => 'http://${m[4]}:${m[2]}',
+  );
   // ${m[4]} may be 0.0.0.0, which seems to allow us to connect to (on my
   // mac), but I'm not sure that's valid everywhere. Maybe we replaced
   // that with localhost.
@@ -44,17 +44,17 @@ Future<String> startPmtilesServer() async {
   final channel = spawnHybridUri(
     'server.dart',
     stayAlive: true,
-    message: ServerArgs(
+    message: const ServerArgs(
       executable: 'pmtiles',
       arguments: [
         'serve',
         '.',
 
-        '--port', '\$port',
+        '--port', r'$port',
 
         // Allow requests from any origin. This allows the `chrome` browser
         // based tests to work.
-        '--cors', '*'
+        '--cors', '*',
       ],
       workingDirectory: 'samples',
     ).toJson(),
@@ -67,7 +67,7 @@ Future<String> startPmtilesServer() async {
   });
 
   // Get the url pmtiles server is running on.
-  return pmtilesServingToUrl(await channel.stream.first);
+  return pmtilesServingToUrl((await channel.stream.first) as String);
 }
 
 /// Starts a plain http server, returning the URL its running on.
@@ -75,14 +75,14 @@ Future<String> startHttpServer() async {
   final channel = spawnHybridUri(
     'server.dart',
     stayAlive: true,
-    message: ServerArgs(
+    message: const ServerArgs(
       executable: 'http-server',
       arguments: [
         '.',
 
         // Allow requests from any origin. This allows the `chrome` browser
         // based tests to work.
-        '--cors', '*'
+        '--cors', '*',
       ],
       workingDirectory: 'samples',
 
@@ -97,10 +97,10 @@ Future<String> startHttpServer() async {
     await channel.sink.done;
   });
 
-  final url = await channel.stream
-      .firstWhere((line) => line.contains('http://127.0.0.1:'), orElse: () {
-    throw Exception('Failed to find available line.');
-  });
+  final url = await channel.stream.firstWhere(
+    (dynamic line) => (line as String).contains('http://127.0.0.1:'),
+    orElse: () => throw Exception('Failed to find available line.'),
+  );
 
   // Get the url server is running on.
   return (url as String).trim();

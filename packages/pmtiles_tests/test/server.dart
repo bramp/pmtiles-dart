@@ -11,9 +11,10 @@ import 'server_args.dart';
 ///
 /// Borrowed from https://stackoverflow.com/a/14095888/88646
 Future<int> getUnusedPort([InternetAddress? address]) {
-  return ServerSocket.bind(address ?? InternetAddress.loopbackIPv4, 0)
-      .then((socket) {
-    var port = socket.port;
+  return ServerSocket.bind(address ?? InternetAddress.loopbackIPv4, 0).then((
+    socket,
+  ) {
+    final port = socket.port;
     socket.close();
     return port;
   });
@@ -45,28 +46,32 @@ Future<int> getUnusedPort([InternetAddress? address]) {
 ///   });
 /// ```
 ///
-hybridMain(StreamChannel channel, Object message) async {
+Future<void> hybridMain(StreamChannel<dynamic> channel, Object message) async {
   final args = ServerArgs.fromJson(message as Map<String, dynamic>);
 
   // Find the binary, as Process seems to require a full path.
-  final executableFullPath =
-      Process.runSync('which', [args.executable]).stdout.toString().trim();
+  final executableFullPath = Process.runSync('which', [
+    args.executable,
+  ]).stdout.toString().trim();
 
   if (executableFullPath.isEmpty) {
     throw Exception('Could not find `${args.executable}` binary');
   }
 
   // Replace any `$port`, with a random port number
-  final arguments = await Future.wait(args.arguments.map((s) async {
-    while (s.contains('\$port')) {
-      final port = await getUnusedPort();
-      s = s.replaceFirst('\$port', port.toString());
-    }
-    return s;
-  }));
+  final arguments = await Future.wait(
+    args.arguments.map((arg) async {
+      var s = arg;
+      if (s.contains(r'$port')) {
+        final port = await getUnusedPort();
+        s = s.replaceFirst(r'$port', port.toString());
+      }
+      return s;
+    }),
+  );
 
   // Invoke the binary
-  Process process = await Process.start(
+  final process = await Process.start(
     executableFullPath,
     arguments,
     workingDirectory: args.workingDirectory,

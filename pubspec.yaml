@@ -1,8 +1,12 @@
 name: pmtiles_workspace
 
 environment:
-  sdk: ">=2.18.0 <3.0.0"
+  sdk: "^3.11.3"
+
+workspace:
+  - packages/pmtiles
+  - packages/pmtiles_cli
+  - packages/pmtiles_tests
 
 dev_dependencies:
-  melos: ^4.0.0
-  lints: ^2.0.0
+  very_good_analysis: ^10.2.0

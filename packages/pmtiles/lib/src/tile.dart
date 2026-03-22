@@ -1,8 +1,20 @@
-import 'compression.dart';
-import 'types.dart';
+import 'package:pmtiles/src/compression.dart';
+import 'package:pmtiles/src/types.dart';
 
 /// Represents a single tile in the archive.
 class Tile {
+  Tile(
+    this.id, {
+    List<int>? bytes,
+    Exception? exception,
+    this.compression = Compression.unknown,
+    this.type = TileType.unknown,
+  }) : _bytes = bytes,
+       _exception = exception,
+       assert(
+         bytes != null || exception != null,
+         'One of bytes or exception must be set',
+       );
   final int id;
 
   final TileType type;
@@ -13,17 +25,6 @@ class Tile {
 
   /// The exception that occured when trying to read this tile.
   final Exception? _exception;
-
-  Tile(
-    this.id, {
-    List<int>? bytes,
-    Exception? exception,
-    this.compression = Compression.unknown,
-    this.type = TileType.unknown,
-  })  : _bytes = bytes,
-        _exception = exception,
-        assert(bytes != null || exception != null,
-            'One of bytes or exception must be set');
 
   /// The tile's uncompressed bytes.
   /// This may throw an Exception if there was an issue reading or decompressing
@@ -45,7 +46,7 @@ class Tile {
   /// any reason.
   List<int> compressedBytes() {
     if (_exception != null) {
-      throw _exception!;
+      throw _exception;
     }
 
     return _bytes!;

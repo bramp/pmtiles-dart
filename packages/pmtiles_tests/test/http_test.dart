@@ -1,6 +1,6 @@
+import 'package:http/http.dart' as http;
 import 'package:pmtiles/pmtiles.dart';
 import 'package:test/test.dart';
-import 'package:http/http.dart' as http;
 
 import 'io_helpers.dart';
 

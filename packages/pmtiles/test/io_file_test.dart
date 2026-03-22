@@ -1,5 +1,4 @@
 @TestOn('!js') // Exclude from js because they doesn't support [File]
-
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -55,7 +54,7 @@ void main() {
 
       Future<Uint8List> readAt(int offset, int length) async {
         final stream = await f.readAt(offset, length);
-        return await stream.toBytes();
+        return stream.toBytes();
       }
 
       var count = 0;

@@ -3,11 +3,10 @@ import 'dart:typed_data';
 
 import 'package:latlong2/latlong.dart';
 import 'package:meta/meta.dart';
-
-import 'convert.dart';
-import 'exceptions.dart';
-import 'types.dart';
-import 'int64.dart';
+import 'package:pmtiles/src/convert.dart';
+import 'package:pmtiles/src/exceptions.dart';
+import 'package:pmtiles/src/int64.dart';
+import 'package:pmtiles/src/types.dart';
 
 // Minimum valid header length.
 const headerLength = 127;
@@ -37,11 +36,10 @@ const headerAndRootMaxLength = 16384;
 ///         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
 @immutable
 class Header {
-  final ByteData data;
-
   Header(
     this.data,
   ) : assert(data.lengthInBytes == headerLength);
+  final ByteData data;
 
   Uint8List get magic => data.buffer.asUint8List(0x00, 0x07);
   int get version => data.getUint8(0x07);
@@ -54,7 +52,7 @@ class Header {
   int get tileDataOffset => data.getSafeUint64(0x38, Endian.little);
   int get tileDataLength => data.getSafeUint64(0x40, Endian.little);
 
-  /// TODO Figure out what this field means.
+  // TODO(bramp): Figure out what this field means.
   int get numberOfAddressedTiles => data.getSafeUint64(0x48, Endian.little);
 
   /// Number of tile entries in the directories. (I think)
@@ -89,7 +87,8 @@ class Header {
     final magic = utf8.decode(this.magic, allowMalformed: true);
     if (magic != 'PMTiles') {
       throw CorruptArchiveException(
-          'Invalid magic in header file, found "$magic"');
+        'Invalid magic in header file, found "$magic"',
+      );
     }
 
     if (version != 3) {
@@ -103,7 +102,7 @@ class Header {
     // If any "int64" are greater than 2^53, we may have problems when
     // running as JavaScript. If any are greater than 2^63, we may also have
     // problems due to dart not having a unsigned int64 type.
-    // TODO Add more robust testing of these values:
+    // TODO(bramp): Add more robust testing of these values:
     rootDirectoryOffset;
     rootDirectoryLength;
     metadataOffset;
@@ -124,12 +123,14 @@ class Header {
 
     if (minZoom > maxZoom) {
       throw CorruptArchiveException(
-          'Invalid min and max zoom. Max zoom ($maxZoom) must be greater than or equal to the min zoom ($minZoom)');
+        'Invalid min and max zoom. Max zoom ($maxZoom) must be greater than or equal to the min zoom ($minZoom)',
+      );
     }
 
     if (centerZoom < minZoom || centerZoom > maxZoom) {
       throw CorruptArchiveException(
-          'Invalid center zoom. Center zoom ($centerZoom) must be between the min zoom ($minZoom) and max zoom ($maxZoom)');
+        'Invalid center zoom. Center zoom ($centerZoom) must be between the min zoom ($minZoom) and max zoom ($maxZoom)',
+      );
     }
   }
 

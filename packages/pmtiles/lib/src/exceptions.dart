@@ -1,7 +1,6 @@
 class TileNotFoundException implements Exception {
-  final int tileId;
-
   TileNotFoundException(this.tileId);
+  final int tileId;
 
   @override
   String toString() {
@@ -10,9 +9,8 @@ class TileNotFoundException implements Exception {
 }
 
 class CorruptArchiveException implements Exception {
-  final String message;
-
   CorruptArchiveException(this.message);
+  final String message;
 
   @override
   String toString() {

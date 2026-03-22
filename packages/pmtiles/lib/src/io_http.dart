@@ -1,18 +1,17 @@
 import 'dart:io';
 import 'package:http/http.dart';
 
-import 'io.dart';
+import 'package:pmtiles/src/io.dart';
 
 class HttpAt implements ReadAt {
+  // We are assuming the remote server supports range reads.
+  const HttpAt(this.client, this.url, {this.headers, this.closeClient = false});
   final Client client;
   final Uri url;
   final Map<String, String>? headers;
 
   /// Should the client be closed once the HttpAt is finished with
   final bool closeClient;
-
-  // We are assuming the remote server supports range reads.
-  const HttpAt(this.client, this.url, {this.headers, this.closeClient = false});
 
   @override
   Future<ByteStream> readAt(int offset, int length) async {
@@ -32,16 +31,17 @@ class HttpAt implements ReadAt {
       final responseLength = response.headers[HttpHeaders.contentLengthHeader];
       if (responseLength != null && int.parse(responseLength) != length) {
         throw HttpException(
-            'Unexpected Content-Length: $responseLength expected $length');
+          'Unexpected Content-Length: $responseLength expected $length',
+        );
       }
 
-      // TODO check Content-Range: bytes 0-1023/146515
+      // TODO(bramp): check Content-Range: bytes 0-1023/146515
 
       return response.stream;
     } catch (e) {
-      if (e
-          .toString()
-          .contains('Error: self.XMLHttpRequest is not a constructor')) {
+      if (e.toString().contains(
+        'Error: self.XMLHttpRequest is not a constructor',
+      )) {
         // Node doesn't support the HTTP APIs
         // https://github.com/dart-lang/http/issues/1126
         //

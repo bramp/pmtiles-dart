@@ -11,19 +11,24 @@ void main() {
   group('http', () {
     test('Connection Refused', () async {
       try {
-        final tiles =
-            await PmTilesArchive.fromUri(Uri.parse('http://localhost:1234'));
+        final tiles = await PmTilesArchive.fromUri(
+          Uri.parse('http://localhost:1234'),
+        );
         tiles.close();
       } on ClientException catch (e) {
         expect(
-            e.message,
-            anyOf(
-              contains('Connection refused'),
+          e.message,
+          anyOf(
+            contains('Connection refused'),
 
-              // In the browser, a "ClientException: XMLHttpRequest error" is
-              // thrown which doesn't tell us the error :(
-              contains('XMLHttpRequest error'),
-            ));
+            // In the browser, a "ClientException: XMLHttpRequest error" is
+            // thrown which doesn't tell us the error :(
+            contains('XMLHttpRequest error'),
+
+            // In newer browser/dart versions, "Failed to fetch" is thrown.
+            contains('Failed to fetch'),
+          ),
+        );
         return;
       }
 
@@ -31,7 +36,7 @@ void main() {
     }, testOn: '!node');
 
     test('404 Not Found', () async {
-      var client = MockClient((request) async {
+      final client = MockClient((request) async {
         return Response('', 404);
       });
 
@@ -62,5 +67,5 @@ void main() {
 
       fail('Expected PathNotFoundException');
     });
-  }, testOn: '!browser');
+  }, testOn: 'vm');
 }

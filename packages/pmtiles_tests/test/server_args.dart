@@ -4,11 +4,6 @@ part 'server_args.g.dart';
 
 @JsonSerializable()
 class ServerArgs {
-  final String executable;
-  final List<String> arguments;
-  final String? workingDirectory;
-  final bool includeParentEnvironment;
-
   const ServerArgs({
     required this.executable,
     this.arguments = const [],
@@ -18,5 +13,9 @@ class ServerArgs {
 
   factory ServerArgs.fromJson(Map<String, dynamic> json) =>
       _$ServerArgsFromJson(json);
+  final String executable;
+  final List<String> arguments;
+  final String? workingDirectory;
+  final bool includeParentEnvironment;
   Map<String, dynamic> toJson() => _$ServerArgsToJson(this);
 }

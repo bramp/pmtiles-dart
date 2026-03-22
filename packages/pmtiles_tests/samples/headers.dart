@@ -1,5 +1,5 @@
 /// The headers from each sample file, formatted in the Header.toString() format.
-// TODO Consider turning this into a more sensible encoding, e.g JSON.
+// TODO(bramp): Consider turning this into a more sensible encoding, e.g JSON.
 const sampleHeaders = <String, String>{
   'countries-leaf.pmtiles': '''
     magic: PMTiles,
@@ -200,5 +200,5 @@ const sampleHeaders = <String, String>{
     maxPosition: LatLng(latitude:36.59301, longitude:-118.26069),
     centerZoom: 12,
     centerPosition: LatLng(latitude:36.577, longitude:-118.2903),
-'''
+''',
 };

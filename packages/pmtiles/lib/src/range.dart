@@ -4,18 +4,17 @@ import 'package:collection/collection.dart';
 
 import 'package:meta/meta.dart';
 
-import 'utils.dart';
+import 'package:pmtiles/src/utils.dart';
 
 /// Simple class to hold a range of numbers
 @immutable
 class IntRange {
+  const IntRange(this.begin, this.end) : assert(begin < end);
   // Inclusive
   final int begin;
 
   // Exclusive
   final int end;
-
-  IntRange(this.begin, this.end) : assert(begin < end);
 
   /// Does this range contain this value?
   bool contains(int value) {
@@ -35,7 +34,8 @@ class IntRange {
   IntRange union(IntRange other) {
     if (!overlaps(other) && !adjacent(other)) {
       throw FormatException(
-          'Ranges do not overlap and are not adjacent ($this and $other)');
+        'Ranges do not overlap and are not adjacent ($this and $other)',
+      );
     }
 
     return IntRange(
@@ -51,7 +51,7 @@ class IntRange {
       return newRanges;
     }
 
-    for (int i = newRanges.length - 1; i > 0; i--) {
+    for (var i = newRanges.length - 1; i > 0; i--) {
       final a = newRanges[i - 1];
       final b = newRanges[i];
 

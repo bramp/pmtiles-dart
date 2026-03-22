@@ -6,21 +6,10 @@ import 'package:meta/meta.dart';
 ///
 @immutable
 class ZXY {
-  final int z;
-  final int x;
-  final int y;
-
-  /// The maximum supported zoom level.
-  ///
-  /// Only allow up to (and including) 26, so that this library works in places
-  /// where doubles are used to represent ints, such as JavaScript.
-  ///    tileID = 2^53 + 1 = ZXY(27, 67108861, 67108863)
-  static const maxAllowedZoom = 26;
-
   const ZXY(this.z, this.x, this.y)
-      : assert(z >= 0 && z < 27),
-        assert(x >= 0 && x < (1 << z)),
-        assert(y >= 0 && x < (1 << z));
+    : assert(z >= 0 && z < 27),
+      assert(x >= 0 && x < (1 << z)),
+      assert(y >= 0 && x < (1 << z));
 
   /// Maps a tileId to the appropriate Zoom, X and Y coordinate.
   factory ZXY.fromTileId(int tileId) {
@@ -42,7 +31,7 @@ class ZXY {
       throw FormatException('Tile ID $tileId must be a positive integer.');
     }
 
-    for (int z = 0; z <= maxAllowedZoom; z++) {
+    for (var z = 0; z <= maxAllowedZoom; z++) {
       // We could also replace the `pow(2, 2 * z)` with `1 << (2 * z)` but bit
       // operations are truncated to 32 bits in dart2js.
       // See https://github.com/dart-lang/sdk/issues/8298
@@ -57,8 +46,19 @@ class ZXY {
     }
 
     throw FormatException(
-        'max zoom depth of $maxAllowedZoom exceeded while decoding $tileId');
+      'max zoom depth of $maxAllowedZoom exceeded while decoding $tileId',
+    );
   }
+  final int z;
+  final int x;
+  final int y;
+
+  /// The maximum supported zoom level.
+  ///
+  /// Only allow up to (and including) 26, so that this library works in places
+  /// where doubles are used to represent ints, such as JavaScript.
+  ///    tileID = 2^53 + 1 = ZXY(27, 67108861, 67108863)
+  static const maxAllowedZoom = 26;
 
   int toTileId() {
     // The tile ID is effectively the sum of all possible tiles on previous
@@ -100,8 +100,8 @@ class _Hilbert {
   static (int, int) map(int n, int t) {
     assert(t >= 0 && t < n * n);
 
-    int x = 0;
-    int y = 0;
+    var x = 0;
+    var y = 0;
 
     for (var i = 1; i < n; i = i * 2) {
       final rx = t & 2 == 2;
@@ -126,9 +126,9 @@ class _Hilbert {
   static int inverse(int n, int x, int y) {
     assert(x >= 0 && x < n && y >= 0 && y < n);
 
-    int t = 0;
+    var t = 0;
 
-    for (int i = n ~/ 2; i > 0; i = i ~/ 2) {
+    for (var i = n ~/ 2; i > 0; i = i ~/ 2) {
       final rx = (x & i) > 0;
       final ry = (y & i) > 0;
 
