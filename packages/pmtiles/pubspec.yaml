@@ -18,7 +18,7 @@ dependencies:
   path: ^1.9.0
 
   # latlong2 is maybe overkill, but anyone consuming this package is most likely already using it.
-  latlong2: ^0.9.1
+  latlong2: ^0.10.0
 
   # I only need CodedBufferReader from the protobuf package, because it's very useful for
   # reading varints.
