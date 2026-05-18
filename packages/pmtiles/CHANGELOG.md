@@ -1,3 +1,11 @@
+## 2.1.0
+
+ - Bumped `latlong2` dependency from `^0.9.1` to `^0.10.1`.
+
+## 2.1.0
+
+ - Bumped `latlong2` dependency from `^0.9.1` to `^0.10.1`.
+
 ## 2.0.0
 
  - **BREAKING**: Updated SDK constraint to Dart 3 (`^3.11.3`).
