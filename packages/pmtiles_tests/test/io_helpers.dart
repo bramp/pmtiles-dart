@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:http/http.dart';
-import 'package:pmtiles/pmtiles.dart';
+import 'package:pmtiles/src/io.dart';
 import 'package:test/test.dart';
 
 import 'server_args.dart';
@@ -89,9 +89,11 @@ Future<String> startPmtilesServer() async {
     channel.sink.add('tearDownAll');
     try {
       await channel.sink.done.timeout(const Duration(seconds: 10));
-    } on TimeoutException {
-      print('pmtiles tearDown timed out. Output:\n${output.join('\n')}');
-      rethrow;
+    } on TimeoutException catch (e) {
+      fail(
+        'pmtiles tearDown timed out: $e\n'
+        'Output:\n${output.join('\n')}',
+      );
     }
   });
 
@@ -148,9 +150,11 @@ Future<String> startHttpServer() async {
     channel.sink.add('tearDownAll');
     try {
       await channel.sink.done.timeout(const Duration(seconds: 10));
-    } on TimeoutException {
-      print('http-server tearDown timed out. Output:\n${output.join('\n')}');
-      rethrow;
+    } on TimeoutException catch (e) {
+      fail(
+        'http-server tearDown timed out: $e\n'
+        'Output:\n${output.join('\n')}',
+      );
     }
   });
 

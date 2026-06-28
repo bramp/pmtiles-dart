@@ -1,4 +1,6 @@
 @TestOn('!js') // Exclude from js because they doesn't support [File]
+library;
+
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -15,9 +17,7 @@ void main() {
       tempFile = File('${directory!.path}/test_file');
 
       final f = await tempFile.create();
-      await f.writeAsBytes(
-        List.generate(100, (index) => index),
-      );
+      await f.writeAsBytes(List.generate(100, (index) => index));
     });
 
     tearDown(() async {

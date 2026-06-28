@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -20,15 +21,11 @@ String byteDataToHex(ByteData bd) {
 /// Print out test values
 void generateTestValues() {
   for (var i = 0; i < 64; i++) {
-    final bd = ByteData(8);
+    final lower = ByteData(8)..setUint64(0, (1 << i) - 1);
+    stdout.writeln("('2^$i-1', '${(1 << i) - 1}', ${byteDataToHex(lower)})");
 
-    bd.setUint64(0, (1 << i) - 1);
-    // ignore: avoid_print
-    print("('2^$i-1', '${(1 << i) - 1}', ${byteDataToHex(bd)})");
-
-    bd.setUint64(0, 1 << i);
-    // ignore: avoid_print
-    print("('2^$i',  '${1 << i}', ${byteDataToHex(bd)})");
+    final exact = ByteData(8)..setUint64(0, 1 << i);
+    stdout.writeln("('2^$i',  '${1 << i}', ${byteDataToHex(exact)})");
   }
 }
 
@@ -418,9 +415,9 @@ void main() {
       // Test with random values
       final r = Random();
       for (var i = 0; i < 1000000; i++) {
-        final bd = ByteData(8);
-        bd.setInt32(0, r.nextInt(1 << 32));
-        bd.setInt32(4, r.nextInt(1 << 32));
+        final bd = ByteData(8)
+          ..setInt32(0, r.nextInt(1 << 32))
+          ..setInt32(4, r.nextInt(1 << 32));
 
         expect(
           bd.getSafeUint64(0, endian).toString(),

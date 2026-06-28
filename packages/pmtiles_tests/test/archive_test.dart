@@ -1,6 +1,8 @@
 // Exclude from node because it doesn't support the HTTP APIs needed to get
 // the reference tiles.
 @TestOn('!node')
+library;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -10,6 +12,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:pmtiles/pmtiles.dart';
+import 'package:pmtiles/src/io.dart';
 import 'package:test/test.dart';
 
 import '../samples/headers.dart';
@@ -66,10 +69,7 @@ void main() async {
       switch (api) {
         case 'http':
           final p = path.basename(sample);
-          return HttpAt(
-            client,
-            Uri.parse('$httpUrl/$p'),
-          );
+          return HttpAt(client, Uri.parse('$httpUrl/$p'));
         case 'file':
           final p = path.join('samples', sample);
           return FileAt(File(p));

@@ -9,7 +9,8 @@ import 'package:pmtiles/src/utils.dart';
 /// Simple class to hold a range of numbers
 @immutable
 class IntRange {
-  const IntRange(this.begin, this.end) : assert(begin < end);
+  const IntRange(this.begin, this.end)
+    : assert(begin < end, 'Expected begin < end, got $begin >= $end');
   // Inclusive
   final int begin;
 
@@ -38,10 +39,7 @@ class IntRange {
       );
     }
 
-    return IntRange(
-      min(begin, other.begin),
-      max(end, other.end),
-    );
+    return IntRange(min(begin, other.begin), max(end, other.end));
   }
 
   /// Returns a list of non-overlapping ranges made from the union of the overlapping ranges.

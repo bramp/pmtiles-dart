@@ -1,15 +1,6 @@
-enum Clustered {
-  notClustered,
-  clustered,
-}
+enum Clustered { notClustered, clustered }
 
-enum Compression {
-  unknown,
-  none,
-  gzip,
-  brotli,
-  zstd,
-}
+enum Compression { unknown, none, gzip, brotli, zstd }
 
 enum TileType {
   unknown,

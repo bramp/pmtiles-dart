@@ -2,7 +2,7 @@
 
 by Andrew Brampton ([bramp.net](https://bramp.net))
 
-Read PMTiles v3 archives stored locally or remotely.
+Read [PMTiles v3.3](https://github.com/protomaps/PMTiles/tree/main/spec/v3) archives stored locally or remotely.
 
 [GitHub](https://github.com/bramp/pmtiles-dart) | [Package](https://pub.dev/packages/pmtiles) | [API Docs](https://pub.dev/documentation/pmtiles/latest/)
 
@@ -148,6 +148,9 @@ To publish a new version to [pub.dev](https://pub.dev/packages/pmtiles):
 Pushing a tag matching `pmtiles-v*` triggers the
 [publish workflow](.github/workflows/publish.yml), which automatically
 publishes to pub.dev via OIDC.
+
+To release a new version, use `melos version pmtiles minor; git push
+--follow-tags` and the [Github action](https://github.com/bramp/pmtiles-dart/actions/workflows/publish.yml) should publish to [pub.dev](https://pub.dev/packages/pmtiles).
 
 ## Additional information
 

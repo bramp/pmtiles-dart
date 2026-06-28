@@ -13,9 +13,9 @@ import 'server_args.dart';
 Future<int> getUnusedPort([InternetAddress? address]) {
   return ServerSocket.bind(address ?? InternetAddress.loopbackIPv4, 0).then((
     socket,
-  ) {
+  ) async {
     final port = socket.port;
-    socket.close();
+    await socket.close();
     return port;
   });
 }
@@ -32,8 +32,9 @@ Future<List<int>> _descendantPids(int pid) async {
       .toList();
   final descendants = <int>[];
   for (final child in children) {
-    descendants.add(child);
-    descendants.addAll(await _descendantPids(child));
+    descendants
+      ..add(child)
+      ..addAll(await _descendantPids(child));
   }
   return descendants;
 }
@@ -147,5 +148,5 @@ Future<void> hybridMain(StreamChannel<dynamic> channel, Object message) async {
   }
 
   // and we are done.
-  channel.sink.close();
+  await channel.sink.close();
 }

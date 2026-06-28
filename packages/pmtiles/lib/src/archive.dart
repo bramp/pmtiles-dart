@@ -24,11 +24,7 @@ import 'package:pmtiles/src/utils.dart';
 /// A PmTiles archive is a single file that contains all the tiles for a map.
 ///
 class PmTilesArchive {
-  PmTilesArchive._(
-    this._f, {
-    required this.header,
-    required this.root,
-  }) {
+  PmTilesArchive._(this._f, {required this.header, required this.root}) {
     _leafCache = LoadingCache<(int, int), Directory>(
       (key) => _loadLeaf(key.$1, key.$2),
       capacity: 8,
@@ -80,7 +76,7 @@ class PmTilesArchive {
         return entry;
       }
 
-      assert(entry.isLeaf);
+      assert(entry.isLeaf, 'Expected entry to be a leaf while traversing.');
 
       dir = await _leaf(entry.offset, entry.length);
     }
@@ -94,10 +90,7 @@ class PmTilesArchive {
   Future<Tile> tile(int tileId) async {
     final entry = await lookup(tileId);
     if (entry == null || entry.isLeaf) {
-      return Tile(
-        tileId,
-        exception: TileNotFoundException(tileId),
-      );
+      return Tile(tileId, exception: TileNotFoundException(tileId));
     }
 
     final tile = await _f.readAt(
@@ -113,12 +106,12 @@ class PmTilesArchive {
     );
   }
 
-  /// Issues a read for the [range], then turns them into [Tile]s that are published to [controller].
+  /// Issues a read for requested entries and publishes resulting tiles.
   Future<void> _readRangeToTiles(
-    final StreamController<Tile> controller,
+    StreamController<Tile> controller,
     List<MapEntry<Entry, List<int>>> entriesToTileIds,
   ) {
-    assert(entriesToTileIds.isNotEmpty);
+    assert(entriesToTileIds.isNotEmpty, 'Expected at least one entry to read.');
     assert(() {
       for (var i = 0; i < entriesToTileIds.length - 1; i++) {
         final cur = entriesToTileIds[i].key;
@@ -130,72 +123,72 @@ class PmTilesArchive {
       }
 
       return true;
-    }());
+    }(), 'Expected contiguous entries in a range read.');
 
     // Calculate the range to read.
     final begin = entriesToTileIds.first.key.offset;
     final last = entriesToTileIds.last.key;
     final end = last.offset + last.length;
 
-    return _f.readAt(header.tileDataOffset + begin, end - begin).then(
-      (stream) async {
-        final buffer = CordBuffer();
+    return _f.readAt(header.tileDataOffset + begin, end - begin).then((
+      stream,
+    ) async {
+      final buffer = CordBuffer();
 
-        // Current entry being processed
-        final i = entriesToTileIds.iterator;
-        final more = i.moveNext();
-        assert(more, 'Expected there to be atleast one entry');
+      // Current entry being processed
+      final i = entriesToTileIds.iterator;
+      final more = i.moveNext();
+      assert(more, 'Expected there to be atleast one entry');
 
-        // Current read offset
-        var offset = begin;
+      // Current read offset
+      var offset = begin;
 
-        await for (final bytes in stream) {
-          if (controller.isClosed) {
-            // If one of the other streams broke, this may close the controller.
-            break;
-          }
-
-          buffer.addAll(bytes);
-
-          // If we have atleast enough bytes for the first entry, try and
-          // process it, repeating until we don't have enough bytes anymore.
-          var entry = i.current.key;
-          while (buffer.length >= entry.length) {
-            assert(
-              offset == entry.offset,
-              'Expected the entry $entry to start at the current offset ${hexPad(offset)}',
-            );
-
-            final bytes = buffer.sublist(0, entry.length);
-            for (final tileId in i.current.value) {
-              // For each tile this entry maps to, publish it.
-              controller.add(
-                Tile(
-                  tileId,
-                  bytes: bytes,
-                  compression: tileCompression,
-                  type: tileType,
-                ),
-              );
-            }
-
-            buffer.removeRange(0, bytes.length);
-            offset += bytes.length;
-
-            // No more entries, so bail.
-            if (!i.moveNext()) {
-              break;
-            }
-            entry = i.current.key;
-          }
+      await for (final bytes in stream) {
+        if (controller.isClosed) {
+          // If one of the other streams broke, this may close the controller.
+          break;
         }
 
-        assert(
-          buffer.length == 0,
-          'Expected to have read all the bytes but ${buffer.length} remain',
-        );
-      },
-    );
+        buffer.addAll(bytes);
+
+        // If we have atleast enough bytes for the first entry, try and
+        // process it, repeating until we don't have enough bytes anymore.
+        var entry = i.current.key;
+        while (buffer.length >= entry.length) {
+          assert(
+            offset == entry.offset,
+            'Expected the entry $entry to start at the current offset ${hexPad(offset)}',
+          );
+
+          final bytes = buffer.sublist(0, entry.length);
+          for (final tileId in i.current.value) {
+            // For each tile this entry maps to, publish it.
+            controller.add(
+              Tile(
+                tileId,
+                bytes: bytes,
+                compression: tileCompression,
+                type: tileType,
+              ),
+            );
+          }
+
+          buffer.removeRange(0, bytes.length);
+          offset += bytes.length;
+
+          // No more entries, so bail.
+          if (!i.moveNext()) {
+            break;
+          }
+          entry = i.current.key;
+        }
+      }
+
+      assert(
+        buffer.length == 0,
+        'Expected to have read all the bytes but ${buffer.length} remain',
+      );
+    });
   }
 
   /// Returns a stream of tiles for the given [tileIds]. The tiles my be return
@@ -223,19 +216,12 @@ class PmTilesArchive {
 
             if (entry == null) {
               controller.add(
-                Tile(
-                  tileId,
-                  exception: TileNotFoundException(tileId),
-                ),
+                Tile(tileId, exception: TileNotFoundException(tileId)),
               );
               continue;
             }
 
-            if (entriesMap.containsKey(entry)) {
-              entriesMap[entry]!.add(tileId);
-            } else {
-              entriesMap[entry] = [tileId];
-            }
+            entriesMap.putIfAbsent(entry, () => []).add(tileId);
           }
 
           // Merge all entries together, into a few large range reads.
@@ -296,7 +282,6 @@ class PmTilesArchive {
 
   /// Reads a PmTiles archive from the given ReadAt interface.
   @visibleForTesting
-  // ignore: invalid_use_of_visible_for_testing_member
   static Future<PmTilesArchive> fromReadAt(ReadAt f) async {
     final headerAndRoot = await (await f.readAt(
       0,
@@ -312,8 +297,7 @@ class PmTilesArchive {
         // Make a copy of the first headerLength (127) bytes.
         headerAndRoot.sublist(0, headerLength).buffer,
       ),
-    );
-    header.validate();
+    )..validate();
 
     if (header.rootDirectoryOffset + header.rootDirectoryLength >
         headerAndRoot.length) {

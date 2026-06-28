@@ -54,9 +54,7 @@ class Entry {
 @immutable
 class Directory {
   const Directory({required this.entries});
-  final List<Entry> entries;
-
-  static Directory from(List<int> uncompressed, {Header? header}) {
+  factory Directory.from(List<int> uncompressed, {Header? header}) {
     final reader = CodedBufferReader(uncompressed);
 
     final n = reader.readUint64().toInt();
@@ -123,11 +121,15 @@ class Directory {
       }
     }
 
-    assert(entries.isSorted((a, b) => a.tileId.compareTo(b.tileId)));
+    assert(
+      entries.isSorted((a, b) => a.tileId.compareTo(b.tileId)),
+      'Expected directory entries to be sorted by tileId',
+    );
     assert(reader.isAtEnd(), 'We should have read everything');
 
     return Directory(entries: entries);
   }
+  final List<Entry> entries;
 
   /// Finds the [Entry] which contains [tileId], or null if not found.
   Entry? find(int tileId) {

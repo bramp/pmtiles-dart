@@ -1,5 +1,5 @@
 import 'package:http/http.dart' as http;
-import 'package:pmtiles/pmtiles.dart';
+import 'package:pmtiles/src/io.dart';
 import 'package:test/test.dart';
 
 import 'io_helpers.dart';

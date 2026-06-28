@@ -6,16 +6,19 @@ version: 2.1.0
 # publish_to: https://pub.dev
 repository: https://github.com/bramp/pmtiles-dart
 
+funding:
+  - https://www.buymeacoffee.com/bramp
+
 environment:
   sdk: ^3.11.3
 
 resolution: workspace
 
 dependencies:
-  collection: ^1.19.0
-  http: ^1.4.0
-  meta: ^1.15.0
-  path: ^1.9.0
+  collection: ^1.19.1
+  http: ^1.6.0
+  meta: ^1.18.0
+  path: ^1.9.1
 
   # latlong2 is maybe overkill, but anyone consuming this package is most likely already using it.
   latlong2: ^0.10.1
@@ -24,14 +27,14 @@ dependencies:
   # reading varints.
   protobuf: ^6.0.0
 
-  pool: ^1.5.1
+  pool: ^1.5.2
 
   # For reading 64bit ints in dart2js
-  fixnum: ^1.1.0
+  fixnum: ^1.1.1
 
   # For decoding compressed data
   archive: ^4.0.9
 
 dev_dependencies:
-  test: ^1.25.2
-  trotter: ^2.2.0
+  test: ^1.31.0
+  trotter: ^2.2.2

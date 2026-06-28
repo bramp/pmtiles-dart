@@ -1,3 +1,4 @@
+// This is a user-facing CLI entrypoint where print keeps output ergonomic.
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
@@ -44,8 +45,9 @@ class ZxyCommand extends Command<void> {
 
 class ShowCommand extends Command<void> {
   ShowCommand() {
-    argParser.addFlag('show-metadata', defaultsTo: true, aliases: ['m']);
-    argParser.addFlag('show-root', aliases: ['r']);
+    argParser
+      ..addFlag('show-metadata', defaultsTo: true, aliases: ['m'])
+      ..addFlag('show-root', aliases: ['r']);
   }
   @override
   final name = 'show';

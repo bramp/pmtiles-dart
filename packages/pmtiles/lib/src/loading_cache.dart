@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:meta/meta.dart';
@@ -6,10 +7,8 @@ import 'package:pool/pool.dart';
 /// A simple async safe loading cache, with request joining.
 // TODO(bramp): Bound the size of the cache, perhaps a LRU.
 class LoadingCache<K, V> {
-  LoadingCache(
-    this._loader, {
-    required this.capacity,
-  }) : _pool = Pool(capacity, timeout: const Duration(seconds: 30));
+  LoadingCache(this._loader, {required this.capacity})
+    : _pool = Pool(capacity, timeout: const Duration(seconds: 30));
 
   /// Max capacity in number of elements.
   final int capacity;
@@ -49,7 +48,7 @@ class LoadingCache<K, V> {
           .firstWhere((element) => element.value == m)
           .key;
       _lastRead.remove(k);
-      cache.remove(k);
+      unawaited(cache.remove(k));
     }
 
     return value;
