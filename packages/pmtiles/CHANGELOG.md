@@ -1,6 +1,11 @@
 ## 2.1.0
 
+ - Removed `src/io.dart` from the public API (was previously `@visibleForTesting`).
  - Bumped `latlong2` dependency from `^0.9.1` to `^0.10.1`.
+ - Bumped all other dependencies to their latest compatible versions.
+ - Tightened analyzer configuration and cleaned up lints throughout the core library.
+ - Improved print-friendly output in example and CLI.
+ - Clarified PMTiles spec link as PMTiles v3.3 in README.
 
 ## 2.0.0
 
