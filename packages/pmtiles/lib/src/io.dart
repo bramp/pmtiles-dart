@@ -20,7 +20,7 @@ abstract interface class ReadAt {
   Future<void> close();
 }
 
-/// An List<int> that is made up internally of a List of List<int>.
+/// A `List<int>` that is made up internally of a `List<List<int>>`.
 // TODO(bramp): Merge sublist and removeRange. Both are always called at the
 // same time, so we can do it in one pass.
 class CordBuffer {
@@ -46,8 +46,8 @@ class CordBuffer {
 
   void removeRange(int start, int end) {
     assert(start == 0, 'Sorry only zero is supported');
-    assert(start <= end);
-    assert(end <= length);
+    assert(start <= end, 'Expected start <= end, got $start > $end');
+    assert(end <= length, 'Range end $end exceeds length $length');
 
     var remaining = end;
     while (remaining > 0 && _buffers.isNotEmpty) {
@@ -73,10 +73,10 @@ class CordBuffer {
   }
 
   /// Returns a single sublist made up of a copy of the data in the buffers.
-  List<int> sublist(final int start, final int end) {
+  List<int> sublist(int start, int end) {
     assert(start == 0, 'Sorry only zero is supported');
-    assert(start <= end);
-    assert(end <= length);
+    assert(start <= end, 'Expected start <= end, got $start > $end');
+    assert(end <= length, 'Range end $end exceeds length $length');
 
     final result = List<int>.empty(growable: true);
     var remaining = end - start;

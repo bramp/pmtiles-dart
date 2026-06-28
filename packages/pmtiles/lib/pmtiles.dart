@@ -2,12 +2,9 @@
 ///
 library;
 
-import 'package:meta/meta.dart';
-
 export 'src/archive.dart';
 export 'src/exceptions.dart';
 export 'src/header.dart';
-@visibleForTesting
 export 'src/io.dart';
 export 'src/tile.dart';
 export 'src/types.dart';

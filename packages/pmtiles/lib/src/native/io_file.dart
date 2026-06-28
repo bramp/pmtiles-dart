@@ -14,7 +14,7 @@ class FileAt implements ReadAt {
   final _pool = Pool(8, timeout: const Duration(seconds: 30));
 
   @override
-  Future<ByteStream> readAt(final int offset, final int length) async {
+  Future<ByteStream> readAt(int offset, int length) async {
     return _pool.withResource(() async {
       // TODO(bramp): Consider caching the open files.
       final file = await this.file.open();

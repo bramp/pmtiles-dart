@@ -36,9 +36,11 @@ const headerAndRootMaxLength = 16384;
 ///         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
 @immutable
 class Header {
-  Header(
-    this.data,
-  ) : assert(data.lengthInBytes == headerLength);
+  Header(this.data)
+    : assert(
+        data.lengthInBytes == headerLength,
+        'Expected header to be $headerLength bytes',
+      );
   final ByteData data;
 
   Uint8List get magic => data.buffer.asUint8List(0x00, 0x07);

@@ -7,9 +7,15 @@ import 'package:meta/meta.dart';
 @immutable
 class ZXY {
   const ZXY(this.z, this.x, this.y)
-    : assert(z >= 0 && z < 27),
-      assert(x >= 0 && x < (1 << z)),
-      assert(y >= 0 && x < (1 << z));
+    : assert(z >= 0 && z < 27, 'z must be in [0, 27), got $z'),
+      assert(
+        x >= 0 && x < (1 << z),
+        'x out of bounds for z=$z: got $x, expected 0 <= x < ${1 << z}',
+      ),
+      assert(
+        y >= 0 && y < (1 << z),
+        'y out of bounds for z=$z: got $y, expected 0 <= y < ${1 << z}',
+      );
 
   /// Maps a tileId to the appropriate Zoom, X and Y coordinate.
   factory ZXY.fromTileId(int tileId) {
@@ -31,18 +37,19 @@ class ZXY {
       throw FormatException('Tile ID $tileId must be a positive integer.');
     }
 
+    var remainingTileId = tileId;
     for (var z = 0; z <= maxAllowedZoom; z++) {
       // We could also replace the `pow(2, 2 * z)` with `1 << (2 * z)` but bit
       // operations are truncated to 32 bits in dart2js.
       // See https://github.com/dart-lang/sdk/issues/8298
       final tilesAtZoom = pow(2, 2 * z).toInt();
 
-      if (tileId < tilesAtZoom) {
-        final (x, y) = _Hilbert.map(1 << z, tileId);
+      if (remainingTileId < tilesAtZoom) {
+        final (x, y) = _Hilbert.map(1 << z, remainingTileId);
         return ZXY(z, x, y);
       }
 
-      tileId -= tilesAtZoom;
+      remainingTileId -= tilesAtZoom;
     }
 
     throw FormatException(
@@ -98,14 +105,15 @@ class ZXY {
 class _Hilbert {
   /// Maps t to (x, y) on a N x N Hilbert curve.
   static (int, int) map(int n, int t) {
-    assert(t >= 0 && t < n * n);
+    assert(t >= 0 && t < n * n, 't must be in [0, n*n), got t=$t n=$n');
 
+    var tileIndex = t;
     var x = 0;
     var y = 0;
 
     for (var i = 1; i < n; i = i * 2) {
-      final rx = t & 2 == 2;
-      final ry = t & 1 == (rx ? 0 : 1);
+      final rx = tileIndex & 2 == 2;
+      final ry = tileIndex & 1 == (rx ? 0 : 1);
 
       (x, y) = _rotate(i, x, y, rx, ry);
 
@@ -116,7 +124,7 @@ class _Hilbert {
         y = y + i;
       }
 
-      t = t ~/ 4;
+      tileIndex = tileIndex ~/ 4;
     }
 
     return (x, y);
@@ -124,31 +132,38 @@ class _Hilbert {
 
   /// Inverse maps (x, y) to t on a N x N Hilbert curve.
   static int inverse(int n, int x, int y) {
-    assert(x >= 0 && x < n && y >= 0 && y < n);
+    assert(
+      x >= 0 && x < n && y >= 0 && y < n,
+      'x and y must be in [0, n), got x=$x y=$y n=$n',
+    );
 
     var t = 0;
+    var xx = x;
+    var yy = y;
 
     for (var i = n ~/ 2; i > 0; i = i ~/ 2) {
-      final rx = (x & i) > 0;
-      final ry = (y & i) > 0;
+      final rx = (xx & i) > 0;
+      final ry = (yy & i) > 0;
 
       t += i * i * ((rx ? 3 : 0) ^ (ry ? 1 : 0));
 
-      (x, y) = _rotate(i, x, y, rx, ry);
+      (xx, yy) = _rotate(i, xx, yy, rx, ry);
     }
 
     return t;
   }
 
   static (int, int) _rotate(int n, int x, int y, bool rx, bool ry) {
+    var xx = x;
+    var yy = y;
     if (!ry) {
       if (rx) {
-        x = n - 1 - x;
-        y = n - 1 - y;
+        xx = n - 1 - xx;
+        yy = n - 1 - yy;
       }
 
-      return (y, x);
+      return (yy, xx);
     }
-    return (x, y);
+    return (xx, yy);
   }
 }
