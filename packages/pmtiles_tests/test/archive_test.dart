@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import 'package:pmtiles/pmtiles.dart';
+import 'package:pmtiles/src/io.dart';
 import 'package:test/test.dart';
 
 import '../samples/headers.dart';

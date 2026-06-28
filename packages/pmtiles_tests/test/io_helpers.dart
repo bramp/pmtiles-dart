@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:http/http.dart';
-import 'package:pmtiles/pmtiles.dart';
+import 'package:pmtiles/src/io.dart';
 import 'package:test/test.dart';
 
 import 'server_args.dart';
