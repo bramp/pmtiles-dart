@@ -31,3 +31,7 @@ doc/api/
 .flutter-plugins-dependencies
 
 .idea/
+
+# Local OS/editor files
+.DS_Store
+pmtiles.code-workspace
