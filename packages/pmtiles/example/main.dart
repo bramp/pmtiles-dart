@@ -1,3 +1,4 @@
+// This is a tutorial-style example file where print keeps output easy to follow.
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
@@ -33,14 +34,17 @@ Future<int> main() async {
 
     // To extract a single tile:
     final t = await archive.tile(tileId);
-    t.type; // e.g. mvt, png, jpg, etc.
+    final type = t.type; // e.g. mvt, png, jpg, etc.
+    print('Single tile type: $type');
 
     // The uncompressed bytes of the tile is available as a List<int>.
-    t.bytes();
+    final bytes = t.bytes();
+    print('Single tile bytes: ${bytes.length}');
 
     // Equally if the tile is going to be reserved, you may leave it compressed
     // in the format that was used in the archive. See tiles.tileCompression above.
-    t.compressedBytes();
+    final compressed = t.compressedBytes();
+    print('Single tile compressed bytes: ${compressed.length}');
 
     // To extract multiple tiles:
     final tiles = archive.tiles([tileId, tileId + 1, tileId + 2]);
@@ -52,7 +56,8 @@ Future<int> main() async {
       print('${tile.id} is available');
 
       // Again the bytes are available via:
-      tile.bytes();
+      final tileBytes = tile.bytes();
+      print('Tile ${tile.id} bytes: ${tileBytes.length}');
     }
   } finally {
     // Don't forget the close the archive once you are done.
