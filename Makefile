@@ -1,18 +1,22 @@
-.PHONY: all format analyze test test-ci test-dart test-flutter test-node test-chrome fix clean upgrade pub-outdated
+.PHONY: all bootstrap format analyze test test-ci test-dart test-flutter test-node test-chrome fix clean upgrade pub-outdated
 
 ## Run all checks (format, analyze, test)
 all: format analyze test
+
+## Restore workspace dependencies after clean
+bootstrap:
+	dart pub get
 
 ## Format all Dart code
 format:
 	dart format .
 
 ## Run the analyzer across all packages
-analyze:
+analyze: bootstrap
 	dart analyze
 
 ## Run all tests
-test: test-dart test-flutter test-node test-chrome
+test: bootstrap test-dart test-flutter test-node test-chrome
 
 ## Run all tests for CI
 test-ci: test
