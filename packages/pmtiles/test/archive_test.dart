@@ -14,7 +14,7 @@ void main() {
         final tiles = await PmTilesArchive.fromUri(
           Uri.parse('http://localhost:1234'),
         );
-        tiles.close();
+        await tiles.close();
       } on ClientException catch (e) {
         expect(
           e.message,
@@ -45,7 +45,7 @@ void main() {
           Uri.parse('http://localhost:1234'),
           client: client,
         );
-        tiles.close();
+        await tiles.close();
       } on HttpException catch (e) {
         expect(e.message, contains('404'));
         return;
@@ -59,7 +59,7 @@ void main() {
     test('not found', () async {
       try {
         final tiles = await PmTilesArchive.fromFile(File('not-found'));
-        tiles.close();
+        await tiles.close();
       } on PathNotFoundException catch (e) {
         expect(e.message, contains('Cannot open file'));
         return;

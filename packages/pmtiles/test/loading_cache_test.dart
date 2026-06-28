@@ -4,10 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('LoadingCache', () {
     test('cache', () async {
-      final cache = LoadingCache<int, int>(
-        Future.value,
-        capacity: 8,
-      );
+      final cache = LoadingCache<int, int>(Future.value, capacity: 8);
 
       expect(cache.length, equals(0));
 
@@ -48,13 +45,10 @@ void main() {
     test('cache (lots of concurrent identical request)', () async {
       var loads = 0;
 
-      final cache = LoadingCache<int, int>(
-        (key) {
-          loads++;
-          return Future.microtask(() => key);
-        },
-        capacity: 8,
-      );
+      final cache = LoadingCache<int, int>((key) {
+        loads++;
+        return Future.microtask(() => key);
+      }, capacity: 8);
 
       expect(cache.length, equals(0));
 
@@ -70,13 +64,10 @@ void main() {
     test('cache (lots of concurrent different)', () async {
       var loads = 0;
 
-      final cache = LoadingCache<int, int>(
-        (key) {
-          loads++;
-          return Future.microtask(() => key);
-        },
-        capacity: 8,
-      );
+      final cache = LoadingCache<int, int>((key) {
+        loads++;
+        return Future.microtask(() => key);
+      }, capacity: 8);
 
       expect(cache.length, equals(0));
 

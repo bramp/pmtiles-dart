@@ -31,7 +31,7 @@ void main() {
             equals(entry.key),
             reason: 'ZXY.fromTileId(${entry.value})',
           );
-        } catch (e) {
+        } on Object catch (e) {
           expect(e, returnsNormally, reason: 'ZXY.fromTileId(${entry.value})');
         }
       }

@@ -1,5 +1,7 @@
 // Exclude on browsers because it doesn't support the filesystem.
 @TestOn('!js')
+library;
+
 import 'package:path/path.dart' as path;
 import 'package:pmtiles/pmtiles.dart';
 import 'package:test/test.dart';
