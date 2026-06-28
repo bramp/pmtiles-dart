@@ -9,7 +9,7 @@ class ServerArgs {
     this.arguments = const [],
     this.workingDirectory,
     this.includeParentEnvironment = false,
-  }) : assert(executable != '');
+  }) : assert(executable != '', 'executable must not be empty');
 
   factory ServerArgs.fromJson(Map<String, dynamic> json) =>
       _$ServerArgsFromJson(json);

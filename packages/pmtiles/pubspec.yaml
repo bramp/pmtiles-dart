@@ -15,25 +15,24 @@ environment:
 resolution: workspace
 
 dependencies:
+  # For decoding compressed data
+  archive: ^4.0.9
   collection: ^1.19.1
+
+  # For reading 64bit ints in dart2js
+  fixnum: ^1.1.1
   http: ^1.6.0
-  meta: ^1.18.0
-  path: ^1.9.1
 
   # latlong2 is maybe overkill, but anyone consuming this package is most likely already using it.
   latlong2: ^0.10.1
+  meta: ^1.18.0
+  path: ^1.9.1
+
+  pool: ^1.5.2
 
   # I only need CodedBufferReader from the protobuf package, because it's very useful for
   # reading varints.
   protobuf: ^6.0.0
-
-  pool: ^1.5.2
-
-  # For reading 64bit ints in dart2js
-  fixnum: ^1.1.1
-
-  # For decoding compressed data
-  archive: ^4.0.9
 
 dev_dependencies:
   test: ^1.31.0

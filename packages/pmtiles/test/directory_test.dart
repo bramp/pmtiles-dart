@@ -5,13 +5,18 @@ import 'package:test/test.dart';
 void main() {
   group('Directory.from', () {
     test('accepts empty directory in non-strict mode', () {
-      final directory = Directory.from([0]);
+      final directory = Directory.from(const [0]);
       expect(directory.entries, isEmpty);
     });
 
     test('accepts zero-length entry in non-strict mode', () {
       final bytes = encodeDirectory([
-        EncodedEntry(tileId: 0, runLength: 1, length: 0, encodedOffset: 1),
+        const EncodedEntry(
+          tileId: 0,
+          runLength: 1,
+          length: 0,
+          encodedOffset: 1,
+        ),
       ]);
 
       final directory = Directory.from(bytes);
@@ -21,7 +26,12 @@ void main() {
 
     test('accepts valid single entry directory', () {
       final bytes = encodeDirectory([
-        EncodedEntry(tileId: 0, runLength: 1, length: 1, encodedOffset: 1),
+        const EncodedEntry(
+          tileId: 0,
+          runLength: 1,
+          length: 1,
+          encodedOffset: 1,
+        ),
       ]);
 
       final directory = Directory.from(bytes);
@@ -34,14 +44,19 @@ void main() {
 
     test('rejects empty directory in strict mode', () {
       expect(
-        () => Directory.from([0], strict: true),
+        () => Directory.from(const [0], strict: true),
         throwsA(isA<CorruptArchiveException>()),
       );
     });
 
     test('rejects zero-length entry in strict mode', () {
       final bytes = encodeDirectory([
-        EncodedEntry(tileId: 0, runLength: 1, length: 0, encodedOffset: 1),
+        const EncodedEntry(
+          tileId: 0,
+          runLength: 1,
+          length: 0,
+          encodedOffset: 1,
+        ),
       ]);
 
       expect(

@@ -30,7 +30,12 @@ void main() {
       'strict mode rejects zero-length root directory entry',
       () async {
         final rootDir = encodeDirectory([
-          EncodedEntry(tileId: 0, runLength: 1, length: 0, encodedOffset: 1),
+          const EncodedEntry(
+            tileId: 0,
+            runLength: 1,
+            length: 0,
+            encodedOffset: 1,
+          ),
         ]);
 
         await expectLater(
@@ -95,7 +100,7 @@ void writeVarint(List<int> out, int value) {
 
 List<int> buildArchiveWithRootDirectory(List<int> rootDirectoryBytes) {
   const headerLength = 127;
-  final rootOffset = headerLength;
+  const rootOffset = headerLength;
   final rootLength = rootDirectoryBytes.length;
 
   // Keep all other sections empty and colocated after root.
@@ -109,31 +114,28 @@ List<int> buildArchiveWithRootDirectory(List<int> rootDirectoryBytes) {
   for (var i = 0; i < magic.length; i++) {
     header.setUint8(i, magic[i]);
   }
-  header.setUint8(0x07, 3); // version
-
-  header.setUint64(0x08, rootOffset, Endian.little);
-  header.setUint64(0x10, rootLength, Endian.little);
-  header.setUint64(0x18, metadataOffset, Endian.little);
-  header.setUint64(0x20, 0, Endian.little); // metadata length
-  header.setUint64(0x28, leafDirsOffset, Endian.little);
-  header.setUint64(0x30, 0, Endian.little); // leaf dirs length
-  header.setUint64(0x38, tileDataOffset, Endian.little);
-  header.setUint64(0x40, 0, Endian.little); // tile data length
-
-  // Addressed tiles / entries / contents unknown -> 0
-  header.setUint64(0x48, 0, Endian.little);
-  header.setUint64(0x50, 0, Endian.little);
-  header.setUint64(0x58, 0, Endian.little);
-
-  // clustered=true, internal=none, tile=none, type=unknown
-  header.setUint8(0x60, 1);
-  header.setUint8(0x61, 1);
-  header.setUint8(0x62, 1);
-  header.setUint8(0x63, 0);
-
-  // min/max zoom
-  header.setUint8(0x64, 0);
-  header.setUint8(0x65, 0);
+  header
+    ..setUint8(0x07, 3) // version
+    ..setUint64(0x08, rootOffset, Endian.little)
+    ..setUint64(0x10, rootLength, Endian.little)
+    ..setUint64(0x18, metadataOffset, Endian.little)
+    ..setUint64(0x20, 0, Endian.little) // metadata length
+    ..setUint64(0x28, leafDirsOffset, Endian.little)
+    ..setUint64(0x30, 0, Endian.little) // leaf dirs length
+    ..setUint64(0x38, tileDataOffset, Endian.little)
+    ..setUint64(0x40, 0, Endian.little) // tile data length
+    // Addressed tiles / entries / contents unknown -> 0
+    ..setUint64(0x48, 0, Endian.little)
+    ..setUint64(0x50, 0, Endian.little)
+    ..setUint64(0x58, 0, Endian.little)
+    // clustered=true, internal=none, tile=none, type=unknown
+    ..setUint8(0x60, 1)
+    ..setUint8(0x61, 1)
+    ..setUint8(0x62, 1)
+    ..setUint8(0x63, 0)
+    // min/max zoom
+    ..setUint8(0x64, 0)
+    ..setUint8(0x65, 0);
 
   // min/max/center positions + center zoom remain zeroed.
 

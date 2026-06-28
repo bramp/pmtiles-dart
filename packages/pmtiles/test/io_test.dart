@@ -4,8 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('CordBuffer', () {
     test('addAll', () {
-      final buffer = CordBuffer();
-      buffer.addAll([1, 2, 3]);
+      final buffer = CordBuffer()..addAll([1, 2, 3]);
       expect(buffer.toList(), equals([1, 2, 3]));
       expect(buffer.length, equals(3));
 
@@ -15,9 +14,9 @@ void main() {
     });
 
     test('sublist', () {
-      final buffer = CordBuffer();
-      buffer.addAll([1, 2, 3]);
-      buffer.addAll([4, 5, 6]);
+      final buffer = CordBuffer()
+        ..addAll([1, 2, 3])
+        ..addAll([4, 5, 6]);
       expect(buffer.length, equals(6));
 
       final full = [1, 2, 3, 4, 5, 6];
@@ -34,9 +33,9 @@ void main() {
     });
 
     test('removeRange', () {
-      final buffer = CordBuffer();
-      buffer.addAll([1, 2, 3]);
-      buffer.addAll([4, 5, 6]);
+      final buffer = CordBuffer()
+        ..addAll([1, 2, 3])
+        ..addAll([4, 5, 6]);
       expect(buffer.length, equals(6));
 
       buffer.removeRange(0, 0);
