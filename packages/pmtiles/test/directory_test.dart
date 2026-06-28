@@ -64,6 +64,50 @@ void main() {
         throwsA(isA<CorruptArchiveException>()),
       );
     });
+
+    test('allows out-of-order leaf directory offsets in non-strict mode', () {
+      final bytes = encodeDirectory([
+        const EncodedEntry(
+          tileId: 0,
+          runLength: 0,
+          length: 1,
+          encodedOffset: 11, // offset 10
+        ),
+        const EncodedEntry(
+          tileId: 1,
+          runLength: 0,
+          length: 1,
+          encodedOffset: 6, // offset 5 (earlier than previous)
+        ),
+      ]);
+
+      final directory = Directory.from(bytes);
+      expect(directory.entries, hasLength(2));
+      expect(directory.entries[0].offset, 10);
+      expect(directory.entries[1].offset, 5);
+    });
+
+    test('rejects out-of-order leaf directory offsets in strict mode', () {
+      final bytes = encodeDirectory([
+        const EncodedEntry(
+          tileId: 0,
+          runLength: 0,
+          length: 1,
+          encodedOffset: 11, // offset 10
+        ),
+        const EncodedEntry(
+          tileId: 1,
+          runLength: 0,
+          length: 1,
+          encodedOffset: 6, // offset 5 (earlier than previous)
+        ),
+      ]);
+
+      expect(
+        () => Directory.from(bytes, strict: true),
+        throwsA(isA<CorruptArchiveException>()),
+      );
+    });
   });
 }
 

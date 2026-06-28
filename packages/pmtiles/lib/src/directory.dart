@@ -137,6 +137,10 @@ class Directory {
       }
     }
 
+    if (strict) {
+      _validateLeafDirectoryOrdering(entries);
+    }
+
     assert(
       entries.isSorted((a, b) => a.tileId.compareTo(b.tileId)),
       'Expected directory entries to be sorted by tileId',
@@ -146,6 +150,26 @@ class Directory {
     return Directory(entries: entries);
   }
   final List<Entry> entries;
+
+  static void _validateLeafDirectoryOrdering(List<Entry> entries) {
+    int? lastLeafOffset;
+    int? lastLeafTileId;
+
+    for (final entry in entries) {
+      if (!entry.isLeaf) {
+        continue;
+      }
+
+      if (lastLeafOffset != null && entry.offset < lastLeafOffset) {
+        throw CorruptArchiveException(
+          'Leaf directories are out of order: tileId ${lastLeafTileId!} has offset $lastLeafOffset, but tileId ${entry.tileId} has earlier offset ${entry.offset}',
+        );
+      }
+
+      lastLeafOffset = entry.offset;
+      lastLeafTileId = entry.tileId;
+    }
+  }
 
   /// Finds the [Entry] which contains [tileId], or null if not found.
   Entry? find(int tileId) {
