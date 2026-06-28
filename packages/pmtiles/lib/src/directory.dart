@@ -54,10 +54,21 @@ class Entry {
 @immutable
 class Directory {
   const Directory({required this.entries});
-  factory Directory.from(List<int> uncompressed, {Header? header}) {
+  factory Directory.from(
+    List<int> uncompressed, {
+    Header? header,
+    bool strict = false,
+  }) {
     final reader = CodedBufferReader(uncompressed);
 
     final n = reader.readUint64().toInt();
+
+    // PMTiles v3.4 clarifies that encoded directories must contain entries.
+    if (strict && n == 0) {
+      throw CorruptArchiveException(
+        'Directory must contain at least one entry',
+      );
+    }
 
     if (uncompressed.length < n * 4) {
       throw CorruptArchiveException(
@@ -85,6 +96,11 @@ class Directory {
 
     for (var i = 0; i < n; i++) {
       entries[i].length = reader.readUint32();
+      if (strict && entries[i].length == 0) {
+        throw CorruptArchiveException(
+          'Directory entry $i has invalid zero length',
+        );
+      }
     }
 
     for (var i = 0; i < n; i++) {

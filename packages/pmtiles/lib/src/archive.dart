@@ -24,7 +24,12 @@ import 'package:pmtiles/src/utils.dart';
 /// A PmTiles archive is a single file that contains all the tiles for a map.
 ///
 class PmTilesArchive {
-  PmTilesArchive._(this._f, {required this.header, required this.root}) {
+  PmTilesArchive._(
+    this._f, {
+    required this.header,
+    required this.root,
+    this.strict = false,
+  }) {
     _leafCache = LoadingCache<(int, int), Directory>(
       (key) => _loadLeaf(key.$1, key.$2),
       capacity: 8,
@@ -37,6 +42,9 @@ class PmTilesArchive {
 
   /// The archive's root directory.
   Directory root;
+
+  /// If true, applies stricter validation for directory/header invariants.
+  final bool strict;
 
   /// Cache of leaf entries
   /// Currently unbounded.
@@ -272,7 +280,7 @@ class PmTilesArchive {
     final leaf = await _f.readAt(header.leafDirectoriesOffset + offset, length);
     final uncompressedleaf = _internalDecoder.convert(await leaf.toBytes());
 
-    return Directory.from(uncompressedleaf, header: header);
+    return Directory.from(uncompressedleaf, header: header, strict: strict);
   }
 
   /// Read a Leaf Directory from offset (from the beginning of the left section) and cache it.
@@ -282,7 +290,10 @@ class PmTilesArchive {
 
   /// Reads a PmTiles archive from the given ReadAt interface.
   @visibleForTesting
-  static Future<PmTilesArchive> fromReadAt(ReadAt f) async {
+  static Future<PmTilesArchive> fromReadAt(
+    ReadAt f, {
+    bool strict = false,
+  }) async {
     final headerAndRoot = await (await f.readAt(
       0,
       headerAndRootMaxLength,
@@ -297,7 +308,7 @@ class PmTilesArchive {
         // Make a copy of the first headerLength (127) bytes.
         headerAndRoot.sublist(0, headerLength).buffer,
       ),
-    )..validate();
+    )..validate(strict: strict);
 
     if (header.rootDirectoryOffset + header.rootDirectoryLength >
         headerAndRoot.length) {
@@ -318,17 +329,21 @@ class PmTilesArchive {
 
     return PmTilesArchive._(
       f,
+      strict: strict,
       header: header,
-      root: Directory.from(uncompressedRoot, header: header),
+      root: Directory.from(uncompressedRoot, header: header, strict: strict),
     );
   }
 
   /// Opens the PmTiles archive from the given path or URL.
-  static Future<PmTilesArchive> from(String pathOrUrl) async {
+  static Future<PmTilesArchive> from(
+    String pathOrUrl, {
+    bool strict = false,
+  }) async {
     if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
-      return fromUri(Uri.parse(pathOrUrl));
+      return fromUri(Uri.parse(pathOrUrl), strict: strict);
     }
-    return fromFile(File(pathOrUrl));
+    return fromFile(File(pathOrUrl), strict: strict);
   }
 
   /// Opens a PmTiles archive from the given URL.
@@ -336,6 +351,7 @@ class PmTilesArchive {
     Uri url, {
     http.Client? client,
     Map<String, String>? headers,
+    bool strict = false,
   }) async {
     return fromReadAt(
       HttpAt(
@@ -345,17 +361,21 @@ class PmTilesArchive {
         // We ask the HttpAt to close the client if we created it here.
         closeClient: client == null,
       ),
+      strict: strict,
     );
   }
 
   /// Opens a PmTiles archive from the given file.
   /// Must call [close] when done.
-  static Future<PmTilesArchive> fromFile(File f) async {
-    return fromReadAt(FileAt(f));
+  static Future<PmTilesArchive> fromFile(File f, {bool strict = false}) async {
+    return fromReadAt(FileAt(f), strict: strict);
   }
 
-  static Future<PmTilesArchive> fromBytes(List<int> bytes) async {
-    return fromReadAt(MemoryAt(bytes));
+  static Future<PmTilesArchive> fromBytes(
+    List<int> bytes, {
+    bool strict = false,
+  }) async {
+    return fromReadAt(MemoryAt(bytes), strict: strict);
   }
 
   Future<void> close() async {
