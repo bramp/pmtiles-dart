@@ -132,12 +132,15 @@ The repository is broken up into three packages:
 
 To publish a new version to [pub.dev](https://pub.dev/packages/pmtiles):
 
-1. Update the version in [packages/pmtiles/pubspec.yaml](packages/pmtiles/pubspec.yaml).
-2. Update [packages/pmtiles/CHANGELOG.md](packages/pmtiles/CHANGELOG.md).
-3. Verify the package is ready to publish:
+1. Update the version in [packages/pmtiles/pubspec.yaml](packages/pmtiles/pubspec.yaml) and [packages/pmtiles/CHANGELOG.md](packages/pmtiles/CHANGELOG.md).
+2. Verify the package is ready to publish:
    ```bash
    cd packages/pmtiles && dart pub publish --dry-run
    ```
+3. Run the package test suite:
+  ```bash
+  make test-dart
+  ```
 4. Commit and push to `main`.
 5. Tag the commit and push the tag:
    ```bash
@@ -149,9 +152,6 @@ Pushing a tag matching `pmtiles-v*` triggers the
 [publish workflow](.github/workflows/publish.yml), which automatically
 publishes to pub.dev via OIDC.
 
-To release a new version, use `melos version pmtiles minor; git push
---follow-tags` and the [Github action](https://github.com/bramp/pmtiles-dart/actions/workflows/publish.yml) should publish to [pub.dev](https://pub.dev/packages/pmtiles).
-
 ## Additional information
 
 The specification is here https://github.com/protomaps/PMTiles/tree/main/spec/v3
@@ -161,7 +161,7 @@ The specification is here https://github.com/protomaps/PMTiles/tree/main/spec/v3
 ```
 BSD 2-Clause License
 
-Copyright (c) 2023-2024, Andrew Brampton
+Copyright (c) 2023-2026, Andrew Brampton
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:

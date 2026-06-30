@@ -1,3 +1,10 @@
+## 2.2.0
+
+ - Added strict archive validation for PMTiles v3.4 directory invariants.
+ - Added support for PMTiles v3.5 `mlt` tile types.
+ - Added Terrarium helpers for PMTiles v3.6 terrain metadata and elevation decoding.
+ - Updated dependencies to their latest compatible versions.
+
 ## 2.1.0
 
  - Removed `src/io.dart` from the public API (was previously `@visibleForTesting`).
