@@ -56,6 +56,7 @@ extension PmpTilesByteData on ByteData {
       3 => TileType.jpeg,
       4 => TileType.webp,
       5 => TileType.avif,
+      6 => TileType.mlt,
       _ => throw CorruptArchiveException('Invalid tile type value "$b"'),
     };
   }

@@ -2,7 +2,7 @@
 
 by Andrew Brampton ([bramp.net](https://bramp.net))
 
-Read [PMTiles v3.4](https://github.com/protomaps/PMTiles/tree/main/spec/v3) archives stored locally or remotely.
+Read [PMTiles v3.6](https://github.com/protomaps/PMTiles/tree/main/spec/v3) archives stored locally or remotely.
 
 [GitHub](https://github.com/bramp/pmtiles-dart) | [Package](https://pub.dev/packages/pmtiles) | [API Docs](https://pub.dev/documentation/pmtiles/latest/)
 

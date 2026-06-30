@@ -5,6 +5,7 @@ library;
 export 'src/archive.dart';
 export 'src/exceptions.dart';
 export 'src/header.dart';
+export 'src/terrarium.dart';
 export 'src/tile.dart';
 export 'src/types.dart';
 export 'src/zxy.dart';
